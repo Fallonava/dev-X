@@ -2552,32 +2552,103 @@ const Utils = {
         const tanggalCuti = doctor.Tanggal || '';
         const today = new Date();
         
-        if (statusCuti.toLowerCase().includes('akan')) return 'akan-cuti';
-        if (statusCuti.toLowerCase().includes('sedang')) return 'sedang-cuti';
+        // 1. Cek berdasarkan teks status langsung
+        const statusLower = statusCuti.toLowerCase();
+        if (statusLower.includes('akan') || statusLower.includes('akan cuti')) {
+            return 'akan-cuti';
+        }
+        if (statusLower.includes('sedang') || statusLower.includes('sedang cuti')) {
+            return 'sedang-cuti';
+        }
         
-        const dateMatch = tanggalCuti.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)/i);
-        if (dateMatch) {
-            const startDay = parseInt(dateMatch[1]);
-            const monthName = dateMatch[3].toLowerCase();
+        // 2. Analisis tanggal cuti untuk menentukan status
+        // PATTERN 1: Range tanggal (22 - 25 November 2024)
+        const rangeDateMatch = tanggalCuti.match(/(\d{1,2})\s*[-–]\s*(\d{1,2})\s+([A-Za-z]+)\s*(\d{4})?/i);
+        
+        if (rangeDateMatch) {
+            const startDay = parseInt(rangeDateMatch[1]);
+            const endDay = parseInt(rangeDateMatch[2]);
+            const monthName = rangeDateMatch[3].toLowerCase();
+            const year = rangeDateMatch[4] ? parseInt(rangeDateMatch[4]) : today.getFullYear();
+            
             const monthMap = {
                 'januari': 0, 'februari': 1, 'maret': 2, 'april': 3,
                 'mei': 4, 'juni': 5, 'juli': 6, 'agustus': 7,
                 'september': 8, 'oktober': 9, 'november': 10, 'desember': 11
             };
             
-            const currentMonth = today.getMonth();
-            const currentDay = today.getDate();
             const cutiMonth = monthMap[monthName];
             
             if (cutiMonth !== undefined) {
-                if (cutiMonth > currentMonth) return 'akan-cuti';
-                if (cutiMonth === currentMonth && currentDay < startDay) return 'akan-cuti';
+                // Buat objek tanggal untuk start dan end cuti
+                const cutiStartDate = new Date(year, cutiMonth, startDay);
+                const cutiEndDate = new Date(year, cutiMonth, endDay);
+                
+                // Reset waktu untuk perbandingan yang akurat
+                cutiStartDate.setHours(0, 0, 0, 0);
+                cutiEndDate.setHours(23, 59, 59, 999);
+                today.setHours(0, 0, 0, 0);
+                
+                // PERBANDINGAN dengan auto-hide
+                if (today < cutiStartDate) {
+                    return 'akan-cuti';
+                } else if (today >= cutiStartDate && today <= cutiEndDate) {
+                    return 'sedang-cuti';
+                } else {
+                    return 'expired';
+                }
             }
         }
         
+        // PATTERN 2: Single date (25 November 2024)
+        const singleDateMatch = tanggalCuti.match(/(\d{1,2})\s+([A-Za-z]+)\s*(\d{4})?/i);
+        
+        if (singleDateMatch) {
+            const day = parseInt(singleDateMatch[1]);
+            const monthName = singleDateMatch[2].toLowerCase();
+            const year = singleDateMatch[3] ? parseInt(singleDateMatch[3]) : today.getFullYear();
+            
+            const monthMap = {
+                'januari': 0, 'februari': 1, 'maret': 2, 'april': 3,
+                'mei': 4, 'juni': 5, 'juli': 6, 'agustus': 7,
+                'september': 8, 'oktober': 9, 'november': 10, 'desember': 11
+            };
+            
+            const cutiMonth = monthMap[monthName];
+            
+            if (cutiMonth !== undefined) {
+                const cutiDate = new Date(year, cutiMonth, day);
+                
+                // Reset waktu untuk perbandingan yang akurat
+                cutiDate.setHours(0, 0, 0, 0);
+                today.setHours(0, 0, 0, 0);
+                
+                // Untuk single date, anggap cuti 1 hari saja
+                const cutiEndDate = new Date(year, cutiMonth, day);
+                cutiEndDate.setHours(23, 59, 59, 999);
+                
+                if (today < cutiDate) {
+                    return 'akan-cuti';
+                } else if (today >= cutiDate && today <= cutiEndDate) {
+                    return 'sedang-cuti';
+                } else {
+                    return 'expired';
+                }
+            }
+        }
+        
+        // Default: jika tidak bisa diparse, anggap sedang cuti
         return 'sedang-cuti';
     }
 };
+
+// ==================== FUNGSI FILTER CUTI AKTIF ====================
+function filterActiveCutiDoctors(doctors) {
+    return doctors.filter(doctor => {
+        const status = Utils.determineCutiStatus(doctor);
+        return status !== 'expired'; // Hanya tampilkan yang bukan expired
+    });
+}
 
 // ==================== SMOOTH CAROUSEL SYSTEM ====================
 class SmoothCutiCarousel {
@@ -2648,6 +2719,10 @@ class SmoothCutiCarousel {
             const tanggalCuti = doctor.Tanggal || 'Cuti';
             const initials = Utils.getInitials(namaDokter);
             const statusCuti = Utils.determineCutiStatus(doctor);
+            
+            // Skip jika expired
+            if (statusCuti === 'expired') continue;
+            
             const badgeText = statusCuti === 'akan-cuti' ? 'AKAN CUTI' : 'SEDANG CUTI';
             
             html += `
@@ -3220,9 +3295,13 @@ class MemorySafeRenderer {
     static displayCutiDoctors(data) {
         if (!AppState.cutiCarousel) return;
         
-        AppState.cutiCarousel.init(data);
+        // FILTER OUT EXPIRED CUTI
+        const activeCutiData = filterActiveCutiDoctors(data);
+        console.log(`📊 Cuti: ${data.length} total, ${activeCutiData.length} aktif`);
         
-        // SETUP EVENT DELEGATION UNTUK CLICK
+        AppState.cutiCarousel.init(activeCutiData);
+        
+        // Setup event delegation untuk click
         const container = document.getElementById('floatingCutiScrollContent');
         if (container) {
             container.addEventListener('click', (e) => {
@@ -3381,6 +3460,13 @@ const AppState = {
 
     memoryMaintenance() {
         MemorySafeCacheManager.clearExpiredCache();
+        
+        // Log status cuti untuk debugging
+        if (this.cutiData && this.cutiData.length > 0) {
+            const activeCuti = filterActiveCutiDoctors(this.cutiData);
+            console.log(`🧹 Memory maintenance - Cuti: ${this.cutiData.length} total, ${activeCuti.length} aktif`);
+        }
+        
         if (window.gc) window.gc();
         console.log('🧠 Memory maintenance performed');
     },
@@ -3764,7 +3850,7 @@ if (document.readyState === 'loading') {
 // Global export for debugging
 window.AppState = AppState;
 
-console.log('✅ Enhanced Floating Footer with SMOOTH Carousel System loaded successfully');
+console.log('✅ Enhanced Floating Footer with AUTO-HIDE CUTI System loaded successfully');
 </script>
 
 <style>

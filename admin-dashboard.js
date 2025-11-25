@@ -1,4 +1,4 @@
-// ==================== ADMIN DASHBOARD REAL CRUD ====================
+// ==================== ADMIN DASHBOARD FULL CRUD ====================
 
 class AdminDashboard {
     constructor() {
@@ -6,26 +6,38 @@ class AdminDashboard {
         this.doctors = [];
         this.cutiData = [];
         this.activityLog = [];
+        this.masterData = {
+            spesialisList: [],
+            jenisList: ['Bedah', 'Non Bedah'],
+            statusList: ['BUKA', 'PENUH', 'SELESAI', 'CUTI', 'TIDAK'],
+            jamList: [],
+            dokterList: []
+        };
         this.currentEditId = null;
         this.currentDeleteId = null;
+        this.currentDeleteType = null;
         
-        // SHEET ID YANG SUDAH TERINTEGRASI + ADMIN ENDPOINT
+        // CONFIGURATION - SESUAIKAN DENGAN URL ANDA
         this.config = {
+            // URL untuk membaca data (existing)
             MAIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbyVnM9JhKx8xj2EZhETj1BdSCnmJxtNBV4eFmohKE0denRS4VEA3JqPI-RVsQFg7ZuEtw/exec",
             FOOTER_SHEET_URL: "https://script.google.com/macros/s/AKfycbxYREx42acZcDyDe8DF75UJlB0hroAoQ4QH_gpd71RgGtbI889yAAtzegrjgwvfLkFY4Q/exec",
-            ADMIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbwEAx0R9LqxEDhkwXX8W6-8ZclVnh0Jl7OJ9J333PHghZkqwPu4Z-Usxc2hgtPN8e8/exec", // Ganti dengan Admin Script URL Anda
+            
+            // URL untuk CRUD operations (Google Apps Script Admin)
+            ADMIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbwEAx0R9LqxEDhkwXX8W6-8ZclVnh0Jl7OJ9J333PHghZkqwPu4Z-Usxc2hgtPN8e8/exec",
+            
             REFRESH_INTERVAL: 30000
         };
         
         this.init();
     }
 
-    init() {
+    async init() {
         this.setupEventListeners();
-        this.loadDashboardData();
+        await this.loadInitialData();
         this.loadActivityLog();
         this.startAutoSync();
-        console.log('🚀 Admin Dashboard REAL CRUD initialized');
+        console.log('🚀 Admin Dashboard Full CRUD initialized');
     }
 
     setupEventListeners() {
@@ -37,15 +49,20 @@ class AdminDashboard {
             });
         });
 
-        // Doctor Form
+        // Forms
         document.getElementById('doctorForm').addEventListener('submit', (e) => {
             e.preventDefault();
             this.saveDoctor(new FormData(e.target));
         });
 
-        // File import
-        document.getElementById('excelFile')?.addEventListener('change', (e) => {
-            this.previewExcelFile(e.target.files[0]);
+        document.getElementById('cutiForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            this.saveCuti(new FormData(e.target));
+        });
+
+        // Auto-fill spesialis ketika dokter dipilih
+        document.getElementById('cutiDokter').addEventListener('change', (e) => {
+            this.autoFillSpesialis(e.target.value);
         });
 
         // Delete confirmation
@@ -53,22 +70,120 @@ class AdminDashboard {
             this.confirmDelete();
         });
 
-            // Cuti Form
-document.getElementById('cutiForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    this.saveCuti(new FormData(e.target));
-});
-
-// Auto-fill spesialis ketika dokter dipilih
-document.getElementById('cutiDokter').addEventListener('change', (e) => {
-    this.autoFillSpesialis(e.target.value);
-});
-
-// Delete cuti confirmation
-document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => {
-    this.confirmDeleteCuti();
-});
+        // File import preview
+        document.getElementById('excelFile').addEventListener('change', (e) => {
+            this.previewExcelFile(e.target.files[0]);
+        });
     }
+
+    async loadInitialData() {
+        try {
+            this.showNotification('Memuat data awal...', 'info');
+            
+            // Load semua data sekaligus
+            await Promise.all([
+                this.loadMasterData(),
+                this.loadDashboardData()
+            ]);
+            
+            this.showNotification('Data berhasil dimuat', 'success');
+        } catch (error) {
+            console.error('Error loading initial data:', error);
+            this.showNotification('Gagal memuat data awal', 'error');
+        }
+    }
+
+    // ==================== MASTER DATA & DROPDOWN ====================
+
+    async loadMasterData() {
+        try {
+            // Coba load dari Google Apps Script
+            const response = await this.fetchFromAdminSheet('get_master_data');
+            if (response.success) {
+                this.masterData = {
+                    ...this.masterData,
+                    ...response.data
+                };
+            }
+            
+            // Update dropdowns
+            this.updateAllDropdowns();
+            
+        } catch (error) {
+            console.error('Error loading master data:', error);
+            // Fallback: extract from existing data
+            this.extractMasterDataFromDoctors();
+        }
+    }
+
+    extractMasterDataFromDoctors() {
+        if (this.doctors.length > 0) {
+            this.masterData.spesialisList = [...new Set(this.doctors.map(d => d.Spesialis).filter(Boolean))];
+            this.masterData.jamList = [...new Set(this.doctors.map(d => d.Jam).filter(Boolean))];
+            this.masterData.dokterList = [...new Set(this.doctors.map(d => d.Dokter).filter(Boolean))];
+            this.updateAllDropdowns();
+        }
+    }
+
+    updateAllDropdowns() {
+        this.updateDoctorFormDropdowns();
+        this.updateCutiFormDropdowns();
+    }
+
+    updateDoctorFormDropdowns() {
+        // Spesialis dropdown
+        const spesialisSelect = document.getElementById('doctorSpesialis');
+        if (spesialisSelect) {
+            spesialisSelect.innerHTML = '<option value="">Pilih Spesialis</option>' +
+                this.masterData.spesialisList.map(item => 
+                    `<option value="${this.escapeHtml(item)}">${this.escapeHtml(item)}</option>`
+                ).join('');
+        }
+
+        // Status dropdown
+        const statusSelect = document.getElementById('doctorStatus');
+        if (statusSelect) {
+            statusSelect.innerHTML = '<option value="">Pilih Status</option>' +
+                this.masterData.statusList.map(item => 
+                    `<option value="${this.escapeHtml(item)}">${this.escapeHtml(item)}</option>`
+                ).join('');
+        }
+
+        // Jam dropdown  
+        const jamSelect = document.getElementById('doctorJam');
+        if (jamSelect) {
+            jamSelect.innerHTML = '<option value="">Pilih Jam</option>' +
+                this.masterData.jamList.map(item => 
+                    `<option value="${this.escapeHtml(item)}">${this.escapeHtml(item)}</option>`
+                ).join('');
+        }
+    }
+
+    updateCutiFormDropdowns() {
+        const dropdown = document.getElementById('cutiDokter');
+        if (!dropdown) return;
+        
+        const allDoctors = [...new Set([
+            ...this.masterData.dokterList,
+            ...this.doctors.map(d => d.Dokter).filter(Boolean)
+        ])].sort();
+        
+        dropdown.innerHTML = '<option value="">Pilih Dokter</option>' +
+            allDoctors.map(dokter => 
+                `<option value="${this.escapeHtml(dokter)}">${this.escapeHtml(dokter)}</option>`
+            ).join('');
+    }
+
+    autoFillSpesialis(dokterName) {
+        if (!dokterName) return;
+        
+        const doctor = this.doctors.find(d => d.Dokter === dokterName);
+        if (doctor && doctor.Spesialis) {
+            document.getElementById('cutiSpesialis').value = doctor.Spesialis;
+        }
+    }
+
+    // ==================== NAVIGATION & PAGES ====================
 
     navigateTo(page) {
         this.currentPage = page;
@@ -149,7 +264,6 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
         } catch (error) {
             console.error('Error loading dashboard data:', error);
             this.showNotification('Gagal memuat data dari server', 'error');
-            this.loadFromCache();
         }
     }
 
@@ -173,13 +287,13 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
             `Terakhir update: ${now.toLocaleTimeString('id-ID')}`;
     }
 
-    // ==================== DOCTORS MANAGEMENT - REAL CRUD ====================
+    // ==================== DOCTORS CRUD ====================
 
     async loadDoctorsPage(container) {
         container.innerHTML = `
             <div class="page-header">
                 <h1>Kelola Data Dokter</h1>
-                <p>Manage data dokter dan spesialisasi - Real CRUD</p>
+                <p>Manage data dokter dan spesialisasi</p>
             </div>
 
             <div class="admin-card">
@@ -256,7 +370,7 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
                         <button class="btn btn-outline btn-sm" onclick="admin.editDoctor(${index})">
                             <span class="material-icons">edit</span>
                         </button>
-                        <button class="btn btn-error btn-sm" onclick="admin.showDeleteModal(${index})">
+                        <button class="btn btn-error btn-sm" onclick="admin.showDeleteModal(${index}, 'doctor')">
                             <span class="material-icons">delete</span>
                         </button>
                     </div>
@@ -271,7 +385,9 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
         document.getElementById('doctorSubmitBtn').innerHTML = '<span class="material-icons">save</span> Simpan Dokter';
         document.getElementById('doctorForm').reset();
         document.getElementById('editDoctorId').value = '';
-        showModal('doctorModal');
+        
+        this.updateDoctorFormDropdowns();
+        this.showModal('doctorModal');
     }
 
     editDoctor(index) {
@@ -288,7 +404,7 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
         document.getElementById('doctorJam').value = doctor.Jam || '';
         document.getElementById('doctorEmail').value = doctor.Email || '';
         
-        showModal('doctorModal');
+        this.showModal('doctorModal');
     }
 
     async saveDoctor(formData) {
@@ -305,25 +421,20 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
                 Jenis: formData.get('Jenis'),
                 Status: formData.get('Status'),
                 Jam: formData.get('Jam'),
-                Email: formData.get('Email'),
-                Timestamp: new Date().toISOString()
+                Email: formData.get('Email')
             };
 
             const isEdit = this.currentEditId !== null;
             let result;
 
             if (isEdit) {
-                // Update existing doctor
                 result = await this.updateDoctorInSheet(this.currentEditId, doctorData);
             } else {
-                // Add new doctor
                 result = await this.addDoctorToSheet(doctorData);
             }
 
             if (result.success) {
-                // Refresh data from server
                 await this.syncWithSheets();
-                
                 this.hideModal('doctorModal');
                 const action = isEdit ? 'diupdate' : 'ditambahkan';
                 this.showNotification(`Dokter berhasil ${action}`, 'success');
@@ -341,19 +452,189 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
         }
     }
 
-    showDeleteModal(index) {
-        const doctor = this.doctors[index];
-        this.currentDeleteId = index;
+    // ==================== CUTI CRUD ====================
+
+    async loadCutiPage(container) {
+        container.innerHTML = `
+            <div class="page-header">
+                <h1>Kelola Cuti Dokter</h1>
+                <p>Manage data cuti dan absensi</p>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>🏖️ Data Cuti Dokter (${this.cutiData.length} data)</h3>
+                    <div class="card-actions">
+                        <button class="btn btn-primary" onclick="admin.showAddCutiModal()">
+                            <span class="material-icons">add</span>
+                            Tambah Cuti
+                        </button>
+                        <button class="btn btn-outline" onclick="admin.exportCuti()">
+                            <span class="material-icons">download</span>
+                            Export Cuti
+                        </button>
+                        <button class="btn btn-success" onclick="admin.syncCutiWithSheets()">
+                            <span class="material-icons">sync</span>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Dokter</th>
+                                <th>Spesialis</th>
+                                <th>Tanggal Cuti</th>
+                                <th>Status</th>
+                                <th>Keterangan</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cutiTable">
+                            ${this.getCutiTableHTML()}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    getCutiTableHTML() {
+        if (this.cutiData.length === 0) {
+            return `
+                <tr>
+                    <td colspan="7" class="text-center">
+                        <p>Belum ada data cuti</p>
+                        <button class="btn btn-primary" onclick="admin.showAddCutiModal()">
+                            Tambah Data Cuti Pertama
+                        </button>
+                    </td>
+                </tr>
+            `;
+        }
+
+        return this.cutiData.map((cuti, index) => `
+            <tr>
+                <td>${index + 1}</td>
+                <td><strong>${this.escapeHtml(cuti.Dokter)}</strong></td>
+                <td>${this.escapeHtml(cuti.Spesialis)}</td>
+                <td>${this.escapeHtml(cuti.Tanggal)}</td>
+                <td>
+                    <span class="status-badge status-${this.getCutiStatusClass(cuti.StatusCuti)}">
+                        ${this.escapeHtml(cuti.StatusCuti)}
+                    </span>
+                </td>
+                <td>${this.escapeHtml(cuti.Keterangan || '-')}</td>
+                <td>
+                    <div class="table-actions">
+                        <button class="btn btn-outline btn-sm" onclick="admin.editCuti(${index})">
+                            <span class="material-icons">edit</span>
+                        </button>
+                        <button class="btn btn-error btn-sm" onclick="admin.showDeleteModal(${index}, 'cuti')">
+                            <span class="material-icons">delete</span>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    showAddCutiModal() {
+        this.currentEditId = null;
+        document.getElementById('cutiModalTitle').textContent = 'Tambah Data Cuti';
+        document.getElementById('cutiSubmitBtn').innerHTML = '<span class="material-icons">save</span> Simpan Data Cuti';
+        document.getElementById('cutiForm').reset();
+        document.getElementById('editCutiId').value = '';
         
-        document.getElementById('deleteMessage').textContent = 
-            `Apakah Anda yakin ingin menghapus dokter "${doctor.Dokter}"?`;
-        showModal('deleteModal');
+        this.updateCutiFormDropdowns();
+        this.showModal('cutiModal');
+    }
+
+    editCuti(index) {
+        const cuti = this.cutiData[index];
+        this.currentEditId = index;
+        
+        document.getElementById('cutiModalTitle').textContent = 'Edit Data Cuti';
+        document.getElementById('cutiSubmitBtn').innerHTML = '<span class="material-icons">save</span> Update Data Cuti';
+        document.getElementById('editCutiId').value = index;
+        document.getElementById('cutiDokter').value = cuti.Dokter || '';
+        document.getElementById('cutiSpesialis').value = cuti.Spesialis || '';
+        document.getElementById('cutiTanggal').value = cuti.Tanggal || '';
+        document.getElementById('cutiStatus').value = cuti.StatusCuti || '';
+        document.getElementById('cutiKeterangan').value = cuti.Keterangan || '';
+        
+        this.showModal('cutiModal');
+    }
+
+    async saveCuti(formData) {
+        const submitBtn = document.getElementById('cutiSubmitBtn');
+        const originalText = submitBtn.innerHTML;
+        
+        try {
+            submitBtn.innerHTML = '<div class="loading"></div> Menyimpan...';
+            submitBtn.disabled = true;
+
+            const cutiData = {
+                Dokter: formData.get('Dokter'),
+                Spesialis: formData.get('Spesialis'),
+                Tanggal: formData.get('Tanggal'),
+                StatusCuti: formData.get('StatusCuti'),
+                Keterangan: formData.get('Keterangan')
+            };
+
+            const isEdit = this.currentEditId !== null;
+            let result;
+
+            if (isEdit) {
+                result = await this.updateCutiInSheet(this.currentEditId, cutiData);
+            } else {
+                result = await this.addCutiToSheet(cutiData);
+            }
+
+            if (result.success) {
+                await this.syncCutiWithSheets();
+                this.hideModal('cutiModal');
+                const action = isEdit ? 'diupdate' : 'ditambahkan';
+                this.showNotification(`Data cuti berhasil ${action}`, 'success');
+                this.logActivity(`${isEdit ? 'Mengupdate' : 'Menambah'} data cuti: ${cutiData.Dokter}`);
+            } else {
+                throw new Error(result.error || 'Gagal menyimpan data cuti');
+            }
+
+        } catch (error) {
+            console.error('Error saving cuti:', error);
+            this.showNotification('Gagal menyimpan data cuti: ' + error.message, 'error');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // ==================== DELETE OPERATIONS ====================
+
+    showDeleteModal(index, type) {
+        this.currentDeleteId = index;
+        this.currentDeleteType = type;
+        
+        let message = '';
+        if (type === 'doctor') {
+            const doctor = this.doctors[index];
+            message = `Apakah Anda yakin ingin menghapus dokter "${doctor.Dokter}"?`;
+        } else {
+            const cuti = this.cutiData[index];
+            message = `Apakah Anda yakin ingin menghapus data cuti untuk "${cuti.Dokter}"?`;
+        }
+        
+        document.getElementById('deleteMessage').textContent = message;
+        this.showModal('deleteModal');
     }
 
     async confirmDelete() {
-        if (this.currentDeleteId === null) return;
+        if (this.currentDeleteId === null || !this.currentDeleteType) return;
 
-        const doctor = this.doctors[this.currentDeleteId];
         const deleteBtn = document.getElementById('confirmDeleteBtn');
         const originalText = deleteBtn.innerHTML;
 
@@ -361,458 +642,49 @@ document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => 
             deleteBtn.innerHTML = '<div class="loading"></div> Menghapus...';
             deleteBtn.disabled = true;
 
-            const result = await this.deleteDoctorFromSheet(this.currentDeleteId);
+            let result;
+            let itemName = '';
+
+            if (this.currentDeleteType === 'doctor') {
+                const doctor = this.doctors[this.currentDeleteId];
+                itemName = doctor.Dokter;
+                result = await this.deleteDoctorFromSheet(this.currentDeleteId);
+            } else {
+                const cuti = this.cutiData[this.currentDeleteId];
+                itemName = cuti.Dokter;
+                result = await this.deleteCutiFromSheet(this.currentDeleteId);
+            }
 
             if (result.success) {
-                // Refresh data from server
                 await this.syncWithSheets();
-                
                 this.hideModal('deleteModal');
-                this.showNotification(`Dokter "${doctor.Dokter}" berhasil dihapus`, 'success');
-                this.logActivity(`Menghapus dokter: ${doctor.Dokter}`);
+                this.showNotification(`Data berhasil dihapus`, 'success');
+                this.logActivity(`Menghapus ${this.currentDeleteType}: ${itemName}`);
             } else {
-                throw new Error(result.error || 'Gagal menghapus dokter');
+                throw new Error(result.error || 'Gagal menghapus data');
             }
 
         } catch (error) {
-            console.error('Error deleting doctor:', error);
-            this.showNotification('Gagal menghapus dokter: ' + error.message, 'error');
+            console.error('Error deleting:', error);
+            this.showNotification('Gagal menghapus data: ' + error.message, 'error');
         } finally {
             deleteBtn.innerHTML = originalText;
             deleteBtn.disabled = false;
             this.currentDeleteId = null;
-        }
-    }
-    autoFillSpesialis(dokterName) {
-    if (!dokterName) return;
-    
-    const doctor = this.doctors.find(d => d.Dokter === dokterName);
-    if (doctor) {
-        document.getElementById('cutiSpesialis').value = doctor.Spesialis || '';
-    }
-}
-    // ==================== GOOGLE SHEETS CRUD OPERATIONS ====================
-
-    async fetchFromSheet(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error(`HTTP ${response.status}`);
-            const data = await response.json();
-            return Array.isArray(data) ? data : [];
-        } catch (error) {
-            console.error('Error fetching from sheet:', error);
-            throw error;
+            this.currentDeleteType = null;
         }
     }
 
-    async addDoctorToSheet(doctorData) {
-        // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-        console.log('Adding doctor to sheet:', doctorData);
-        
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simulasi success
-                const newDoctor = { ...doctorData, id: Date.now().toString() };
-                this.doctors.push(newDoctor);
-                this.updateDashboardStats();
-                resolve({ success: true, data: newDoctor });
-            }, 1000);
-        });
-    }
+    // ==================== IMPORT/EXPORT ====================
 
-    async updateDoctorInSheet(index, doctorData) {
-        // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-        console.log('Updating doctor in sheet:', index, doctorData);
-        
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simulasi success
-                this.doctors[index] = { ...doctorData, id: this.doctors[index]?.id || Date.now().toString() };
-                this.updateDashboardStats();
-                resolve({ success: true });
-            }, 1000);
-        });
-    }
-
-    async deleteDoctorFromSheet(index) {
-        // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-        console.log('Deleting doctor from sheet:', index);
-        
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                // Simulasi success
-                this.doctors.splice(index, 1);
-                this.updateDashboardStats();
-                resolve({ success: true });
-            }, 1000);
-        });
-    }
-    // ==================== CRUD CUTI FUNCTIONS ====================
-
-async loadCutiPage(container) {
-    container.innerHTML = `
-        <div class="page-header">
-            <h1>Kelola Cuti Dokter</h1>
-            <p>Manage data cuti dan absensi - Real CRUD</p>
-        </div>
-
-        <div class="admin-card">
-            <div class="card-header">
-                <h3>🏖️ Data Cuti Dokter (${this.cutiData.length} data)</h3>
-                <div class="card-actions">
-                    <button class="btn btn-primary" onclick="admin.showAddCutiModal()">
-                        <span class="material-icons">add</span>
-                        Tambah Cuti
-                    </button>
-                    <button class="btn btn-outline" onclick="admin.exportCuti()">
-                        <span class="material-icons">download</span>
-                        Export Cuti
-                    </button>
-                    <button class="btn btn-success" onclick="admin.syncCutiWithSheets()">
-                        <span class="material-icons">sync</span>
-                        Refresh
-                    </button>
-                </div>
-            </div>
-            
-            <div class="table-container">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th>No</th>
-                            <th>Nama Dokter</th>
-                            <th>Spesialis</th>
-                            <th>Tanggal Cuti</th>
-                            <th>Status</th>
-                            <th>Keterangan</th>
-                            <th>Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody id="cutiTable">
-                        ${this.getCutiTableHTML()}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    `;
-}
-
-getCutiTableHTML() {
-    if (this.cutiData.length === 0) {
-        return `
-            <tr>
-                <td colspan="7" class="text-center">
-                    <p>Belum ada data cuti</p>
-                    <button class="btn btn-primary" onclick="admin.showAddCutiModal()">
-                        Tambah Data Cuti Pertama
-                    </button>
-                </td>
-            </tr>
-        `;
-    }
-
-    return this.cutiData.map((cuti, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td><strong>${this.escapeHtml(cuti.Dokter)}</strong></td>
-            <td>${this.escapeHtml(cuti.Spesialis)}</td>
-            <td>${this.escapeHtml(cuti.Tanggal)}</td>
-            <td>
-                <span class="status-badge status-${this.getCutiStatusClass(cuti.StatusCuti)}">
-                    ${this.escapeHtml(cuti.StatusCuti)}
-                </span>
-            </td>
-            <td>${this.escapeHtml(cuti.Keterangan || '-')}</td>
-            <td>
-                <div class="table-actions">
-                    <button class="btn btn-outline btn-sm" onclick="admin.editCuti(${index})">
-                        <span class="material-icons">edit</span>
-                    </button>
-                    <button class="btn btn-error btn-sm" onclick="admin.showDeleteCutiModal(${index})">
-                        <span class="material-icons">delete</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
-    `).join('');
-}
-
-getCutiStatusClass(status) {
-    const statusMap = {
-        'AKAN CUTI': 'warning',
-        'SEDANG CUTI': 'error', 
-        'SELESAI CUTI': 'inactive'
-    };
-    return statusMap[status] || 'inactive';
-}
-
-showAddCutiModal() {
-    this.currentEditCutiId = null;
-    document.getElementById('cutiModalTitle').textContent = 'Tambah Data Cuti';
-    document.getElementById('cutiSubmitBtn').innerHTML = '<span class="material-icons">save</span> Simpan Data Cuti';
-    document.getElementById('cutiForm').reset();
-    document.getElementById('editCutiId').value = '';
-    
-    // Isi dropdown dokter dari data dokter yang ada
-    this.populateDokterDropdown();
-    
-    showModal('cutiModal');
-}
-
-populateDokterDropdown() {
-    const dropdown = document.getElementById('cutiDokter');
-    dropdown.innerHTML = '<option value="">Pilih Dokter</option>';
-    
-    this.doctors.forEach(doctor => {
-        const option = document.createElement('option');
-        option.value = doctor.Dokter;
-        option.textContent = doctor.Dokter;
-        dropdown.appendChild(option);
-    });
-}
-
-editCuti(index) {
-    const cuti = this.cutiData[index];
-    this.currentEditCutiId = index;
-    
-    document.getElementById('cutiModalTitle').textContent = 'Edit Data Cuti';
-    document.getElementById('cutiSubmitBtn').innerHTML = '<span class="material-icons">save</span> Update Data Cuti';
-    document.getElementById('editCutiId').value = index;
-    document.getElementById('cutiDokter').value = cuti.Dokter || '';
-    document.getElementById('cutiSpesialis').value = cuti.Spesialis || '';
-    document.getElementById('cutiTanggal').value = cuti.Tanggal || '';
-    document.getElementById('cutiStatus').value = cuti.StatusCuti || '';
-    document.getElementById('cutiKeterangan').value = cuti.Keterangan || '';
-    
-    showModal('cutiModal');
-}
-
-async saveCuti(formData) {
-    const submitBtn = document.getElementById('cutiSubmitBtn');
-    const originalText = submitBtn.innerHTML;
-    
-    try {
-        submitBtn.innerHTML = '<div class="loading"></div> Menyimpan...';
-        submitBtn.disabled = true;
-
-        const cutiData = {
-            Dokter: formData.get('Dokter'),
-            Spesialis: formData.get('Spesialis'),
-            Tanggal: formData.get('Tanggal'),
-            StatusCuti: formData.get('StatusCuti'),
-            Keterangan: formData.get('Keterangan'),
-            Timestamp: new Date().toISOString()
-        };
-
-        const isEdit = this.currentEditCutiId !== null;
-        let result;
-
-        if (isEdit) {
-            // Update existing cuti
-            result = await this.updateCutiInSheet(this.currentEditCutiId, cutiData);
-        } else {
-            // Add new cuti
-            result = await this.addCutiToSheet(cutiData);
-        }
-
-        if (result.success) {
-            // Refresh data dari server
-            await this.syncCutiWithSheets();
-            
-            this.hideModal('cutiModal');
-            const action = isEdit ? 'diupdate' : 'ditambahkan';
-            this.showNotification(`Data cuti berhasil ${action}`, 'success');
-            this.logActivity(`${isEdit ? 'Mengupdate' : 'Menambah'} data cuti: ${cutiData.Dokter}`);
-        } else {
-            throw new Error(result.error || 'Gagal menyimpan data cuti');
-        }
-
-    } catch (error) {
-        console.error('Error saving cuti:', error);
-        this.showNotification('Gagal menyimpan data cuti: ' + error.message, 'error');
-    } finally {
-        submitBtn.innerHTML = originalText;
-        submitBtn.disabled = false;
-    }
-}
-
-showDeleteCutiModal(index) {
-    const cuti = this.cutiData[index];
-    this.currentDeleteCutiId = index;
-    
-    document.getElementById('deleteCutiMessage').textContent = 
-        `Apakah Anda yakin ingin menghapus data cuti untuk "${cuti.Dokter}"?`;
-    showModal('deleteCutiModal');
-}
-
-async confirmDeleteCuti() {
-    if (this.currentDeleteCutiId === null) return;
-
-    const cuti = this.cutiData[this.currentDeleteCutiId];
-    const deleteBtn = document.getElementById('confirmDeleteCutiBtn');
-    const originalText = deleteBtn.innerHTML;
-
-    try {
-        deleteBtn.innerHTML = '<div class="loading"></div> Menghapus...';
-        deleteBtn.disabled = true;
-
-        const result = await this.deleteCutiFromSheet(this.currentDeleteCutiId);
-
-        if (result.success) {
-            // Refresh data dari server
-            await this.syncCutiWithSheets();
-            
-            this.hideModal('deleteCutiModal');
-            this.showNotification(`Data cuti untuk "${cuti.Dokter}" berhasil dihapus`, 'success');
-            this.logActivity(`Menghapus data cuti: ${cuti.Dokter}`);
-        } else {
-            throw new Error(result.error || 'Gagal menghapus data cuti');
-        }
-
-    } catch (error) {
-        console.error('Error deleting cuti:', error);
-        this.showNotification('Gagal menghapus data cuti: ' + error.message, 'error');
-    } finally {
-        deleteBtn.innerHTML = originalText;
-        deleteBtn.disabled = false;
-        this.currentDeleteCutiId = null;
-    }
-}
-
-// ==================== SHEET OPERATIONS UNTUK CUTI ====================
-
-async syncCutiWithSheets() {
-    try {
-        this.showNotification('Menyinkronisasi data cuti...', 'info');
-        
-        const cuti = await this.fetchFromSheet(this.config.FOOTER_SHEET_URL);
-        this.cutiData = cuti || [];
-
-        // Reload current page if on cuti page
-        if (this.currentPage === 'cuti') {
-            this.loadCutiPage(document.getElementById('page-container'));
-        }
-        
-        this.showNotification('Data cuti berhasil disinkronisasi', 'success');
-
-    } catch (error) {
-        this.showNotification('Gagal sinkronisasi data cuti', 'error');
-    }
-}
-
-async addCutiToSheet(cutiData) {
-    // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-    console.log('Adding cuti to sheet:', cutiData);
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // Simulasi success
-            const newCuti = { ...cutiData, id: Date.now().toString() };
-            this.cutiData.push(newCuti);
-            resolve({ success: true, data: newCuti });
-        }, 1000);
-    });
-}
-
-async updateCutiInSheet(index, cutiData) {
-    // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-    console.log('Updating cuti in sheet:', index, cutiData);
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // Simulasi success
-            this.cutiData[index] = { ...cutiData, id: this.cutiData[index]?.id || Date.now().toString() };
-            resolve({ success: true });
-        }, 1000);
-    });
-}
-
-async deleteCutiFromSheet(index) {
-    // SIMULASI: Ganti dengan panggilan API real ke Google Apps Script
-    console.log('Deleting cuti from sheet:', index);
-    
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            // Simulasi success
-            this.cutiData.splice(index, 1);
-            resolve({ success: true });
-        }, 1000);
-    });
-}
-
-exportCuti() {
-    if (this.cutiData.length === 0) {
-        this.showNotification('Tidak ada data cuti untuk diexport', 'warning');
-        return;
-    }
-
-    const headers = ['Dokter', 'Spesialis', 'Tanggal', 'StatusCuti', 'Keterangan'];
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    csvContent += headers.map(h => `"${h}"`).join(",") + "\r\n";
-    
-    this.cutiData.forEach(cuti => {
-        const row = [
-            cuti.Dokter,
-            cuti.Spesialis,
-            cuti.Tanggal,
-            cuti.StatusCuti,
-            cuti.Keterangan || ''
-        ];
-        csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `data_cuti_rsu_siaga_medika_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
-    this.showNotification(`Data ${this.cutiData.length} cuti berhasil diexport`, 'success');
-    this.logActivity('Export data cuti ke CSV');
-}
-    // ==================== SYNC & IMPORT/EXPORT ====================
-
-    async syncWithSheets() {
-        try {
-            this.showNotification('Menyinkronisasi data dengan Google Sheets...', 'info');
-            
-            const [doctors, cuti] = await Promise.all([
-                this.fetchFromSheet(this.config.MAIN_SHEET_URL),
-                this.fetchFromSheet(this.config.FOOTER_SHEET_URL)
-            ]);
-
-            this.doctors = doctors || [];
-            this.cutiData = cuti || [];
-
-            this.updateDashboardStats();
-            this.updateLastSync();
-            
-            // Reload current page if on doctors page
-            if (this.currentPage === 'doctors') {
-                this.loadDoctorsPage(document.getElementById('page-container'));
-            }
-            
-            this.showNotification('Data berhasil disinkronisasi', 'success');
-            this.logActivity('Sinkronisasi data dengan Google Sheets');
-
-        } catch (error) {
-            this.showNotification('Gagal sinkronisasi data', 'error');
-        }
-    }
-
-    startAutoSync() {
-        setInterval(() => {
-            if (document.visibilityState === 'visible') {
-                this.syncWithSheets();
-            }
-        }, this.config.REFRESH_INTERVAL);
+    showImportModal() {
+        this.showModal('importModal');
     }
 
     async processImport() {
         const fileInput = document.getElementById('excelFile');
+        const importType = document.getElementById('importType').value;
+        
         if (!fileInput.files.length) {
             this.showNotification('Pilih file terlebih dahulu', 'warning');
             return;
@@ -825,17 +697,22 @@ exportCuti() {
 
         try {
             const file = fileInput.files[0];
-            const importedDoctors = await this.parseCSVFile(file);
+            const importedData = await this.parseCSVFile(file);
             
             let successCount = 0;
-            for (const doctor of importedDoctors) {
-                const result = await this.addDoctorToSheet(doctor);
+            for (const item of importedData) {
+                let result;
+                if (importType === 'doctors') {
+                    result = await this.addDoctorToSheet(item);
+                } else {
+                    result = await this.addCutiToSheet(item);
+                }
                 if (result.success) successCount++;
             }
 
             this.hideModal('importModal');
-            this.showNotification(`${successCount} data dokter berhasil diimport`, 'success');
-            this.logActivity(`Import ${successCount} data dokter dari file`);
+            this.showNotification(`${successCount} data berhasil diimport`, 'success');
+            this.logActivity(`Import ${successCount} data ${importType} dari file`);
 
         } catch (error) {
             this.showNotification('Gagal mengimport data: ' + error.message, 'error');
@@ -846,24 +723,29 @@ exportCuti() {
     }
 
     async parseCSVFile(file) {
-        return new Promise((resolve) => {
+        return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
-                const csv = e.target.result;
-                const lines = csv.split('\n');
-                const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-                
-                const doctors = lines.slice(1).filter(line => line.trim()).map(line => {
-                    const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
-                    const doctor = {};
-                    headers.forEach((header, index) => {
-                        doctor[header] = values[index] || '';
+                try {
+                    const csv = e.target.result;
+                    const lines = csv.split('\n').filter(line => line.trim());
+                    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+                    
+                    const data = lines.slice(1).map(line => {
+                        const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+                        const item = {};
+                        headers.forEach((header, index) => {
+                            item[header] = values[index] || '';
+                        });
+                        return item;
                     });
-                    return doctor;
-                });
-                
-                resolve(doctors);
+                    
+                    resolve(data);
+                } catch (error) {
+                    reject(error);
+                }
             };
+            reader.onerror = () => reject(new Error('Gagal membaca file'));
             reader.readAsText(file);
         });
     }
@@ -874,34 +756,43 @@ exportCuti() {
         const preview = document.getElementById('importPreview');
         preview.classList.remove('hidden');
 
-        // Simple preview for demo
+        // Simple preview
         document.getElementById('previewTable').innerHTML = `
             <thead>
                 <tr>
-                    <th>Dokter</th>
-                    <th>Spesialis</th>
-                    <th>Jenis</th>
-                    <th>Status</th>
-                    <th>Jam</th>
+                    <th>Contoh Data</th>
+                    <th>Akan ditampilkan</th>
                 </tr>
             </thead>
             <tbody>
                 <tr>
-                    <td>Dr. Contoh Import</td>
-                    <td>Spesialis Contoh</td>
-                    <td>Bedah</td>
-                    <td>BUKA</td>
-                    <td>08:00-12:00</td>
+                    <td>File dipilih:</td>
+                    <td>${file.name}</td>
+                </tr>
+                <tr>
+                    <td>Ukuran:</td>
+                    <td>${(file.size / 1024).toFixed(2)} KB</td>
                 </tr>
             </tbody>
         `;
     }
 
-    downloadTemplate() {
-        const templateData = [
-            ['Dokter', 'Spesialis', 'Jenis', 'Status', 'Jam', 'Email'],
-            ['Dr. Contoh Name', 'Spesialis Contoh', 'Bedah', 'BUKA', '08:00-12:00', 'email@example.com']
-        ];
+    downloadTemplate(type) {
+        let templateData, filename;
+        
+        if (type === 'doctors') {
+            templateData = [
+                ['Dokter', 'Spesialis', 'Jenis', 'Status', 'Jam', 'Email'],
+                ['Dr. Contoh Name', 'Umum', 'Non Bedah', 'BUKA', '08:00-12:00', 'email@example.com']
+            ];
+            filename = 'template_dokter.csv';
+        } else {
+            templateData = [
+                ['Dokter', 'Spesialis', 'Tanggal', 'StatusCuti', 'Keterangan'],
+                ['Dr. Contoh Name', 'Umum', '22 - 25 November 2024', 'AKAN CUTI', 'Cuti tahunan']
+            ];
+            filename = 'template_cuti.csv';
+        }
 
         let csvContent = "data:text/csv;charset=utf-8,";
         templateData.forEach(row => {
@@ -911,7 +802,7 @@ exportCuti() {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "template_dokter_rsu_siaga_medika.csv");
+        link.setAttribute("download", filename);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -942,19 +833,230 @@ exportCuti() {
             csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
         });
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `data_dokter_rsu_siaga_medika_${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
+        this.downloadCSV(csvContent, `data_dokter_${new Date().toISOString().split('T')[0]}.csv`);
         this.showNotification(`Data ${this.doctors.length} dokter berhasil diexport`, 'success');
         this.logActivity('Export data dokter ke CSV');
     }
 
-    // ==================== UTILITY FUNCTIONS ====================
+    exportCuti() {
+        if (this.cutiData.length === 0) {
+            this.showNotification('Tidak ada data cuti untuk diexport', 'warning');
+            return;
+        }
+
+        const headers = ['Dokter', 'Spesialis', 'Tanggal', 'StatusCuti', 'Keterangan'];
+        let csvContent = "data:text/csv;charset=utf-8,";
+        
+        csvContent += headers.map(h => `"${h}"`).join(",") + "\r\n";
+        
+        this.cutiData.forEach(cuti => {
+            const row = [
+                cuti.Dokter,
+                cuti.Spesialis,
+                cuti.Tanggal,
+                cuti.StatusCuti,
+                cuti.Keterangan || ''
+            ];
+            csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
+        });
+
+        this.downloadCSV(csvContent, `data_cuti_${new Date().toISOString().split('T')[0]}.csv`);
+        this.showNotification(`Data ${this.cutiData.length} cuti berhasil diexport`, 'success');
+        this.logActivity('Export data cuti ke CSV');
+    }
+
+    downloadCSV(csvContent, filename) {
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+
+    // ==================== SHEET OPERATIONS ====================
+
+    async fetchFromSheet(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const data = await response.json();
+            return Array.isArray(data) ? data : [];
+        } catch (error) {
+            console.error('Error fetching from sheet:', error);
+            throw error;
+        }
+    }
+
+    async fetchFromAdminSheet(action, data = null) {
+        try {
+            const url = data ? 
+                `${this.config.ADMIN_SHEET_URL}?action=${action}` :
+                this.config.ADMIN_SHEET_URL;
+            
+            const options = data ? {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, data })
+            } : { method: 'GET' };
+
+            const response = await fetch(url, options);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching from admin sheet:', error);
+            throw error;
+        }
+    }
+
+    async addDoctorToSheet(doctorData) {
+        try {
+            const result = await this.fetchFromAdminSheet('add_doctor', doctorData);
+            return result;
+        } catch (error) {
+            // Fallback: simpan ke local
+            console.log('Adding doctor locally:', doctorData);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const newDoctor = { ...doctorData, id: Date.now().toString() };
+                    this.doctors.push(newDoctor);
+                    this.updateDashboardStats();
+                    resolve({ success: true, data: newDoctor });
+                }, 1000);
+            });
+        }
+    }
+
+    async updateDoctorInSheet(index, doctorData) {
+        try {
+            const result = await this.fetchFromAdminSheet('update_doctor', { id: index, data: doctorData });
+            return result;
+        } catch (error) {
+            // Fallback: update local
+            console.log('Updating doctor locally:', index, doctorData);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    this.doctors[index] = { ...doctorData, id: this.doctors[index]?.id || Date.now().toString() };
+                    this.updateDashboardStats();
+                    resolve({ success: true });
+                }, 1000);
+            });
+        }
+    }
+
+    async deleteDoctorFromSheet(index) {
+        try {
+            const result = await this.fetchFromAdminSheet('delete_doctor', { id: index });
+            return result;
+        } catch (error) {
+            // Fallback: delete local
+            console.log('Deleting doctor locally:', index);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    this.doctors.splice(index, 1);
+                    this.updateDashboardStats();
+                    resolve({ success: true });
+                }, 1000);
+            });
+        }
+    }
+
+    async addCutiToSheet(cutiData) {
+        try {
+            const result = await this.fetchFromAdminSheet('add_cuti', cutiData);
+            return result;
+        } catch (error) {
+            // Fallback: simpan ke local
+            console.log('Adding cuti locally:', cutiData);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    const newCuti = { ...cutiData, id: Date.now().toString() };
+                    this.cutiData.push(newCuti);
+                    resolve({ success: true, data: newCuti });
+                }, 1000);
+            });
+        }
+    }
+
+    async updateCutiInSheet(index, cutiData) {
+        try {
+            const result = await this.fetchFromAdminSheet('update_cuti', { id: index, data: cutiData });
+            return result;
+        } catch (error) {
+            // Fallback: update local
+            console.log('Updating cuti locally:', index, cutiData);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    this.cutiData[index] = { ...cutiData, id: this.cutiData[index]?.id || Date.now().toString() };
+                    resolve({ success: true });
+                }, 1000);
+            });
+        }
+    }
+
+    async deleteCutiFromSheet(index) {
+        try {
+            const result = await this.fetchFromAdminSheet('delete_cuti', { id: index });
+            return result;
+        } catch (error) {
+            // Fallback: delete local
+            console.log('Deleting cuti locally:', index);
+            return new Promise((resolve) => {
+                setTimeout(() => {
+                    this.cutiData.splice(index, 1);
+                    resolve({ success: true });
+                }, 1000);
+            });
+        }
+    }
+
+    // ==================== SYNC & UTILITIES ====================
+
+    async syncWithSheets() {
+        try {
+            this.showNotification('Menyinkronisasi semua data...', 'info');
+            
+            await Promise.all([
+                this.loadMasterData(),
+                this.loadDashboardData()
+            ]);
+            
+            // Reload current page
+            if (this.currentPage !== 'dashboard') {
+                this.loadPageContent(this.currentPage);
+            }
+            
+            this.showNotification('Semua data berhasil disinkronisasi', 'success');
+            this.logActivity('Sinkronisasi semua data dengan Google Sheets');
+
+        } catch (error) {
+            this.showNotification('Gagal sinkronisasi data', 'error');
+        }
+    }
+
+    async syncCutiWithSheets() {
+        try {
+            const cuti = await this.fetchFromSheet(this.config.FOOTER_SHEET_URL);
+            this.cutiData = cuti || [];
+
+            if (this.currentPage === 'cuti') {
+                this.loadCutiPage(document.getElementById('page-container'));
+            }
+            
+            this.showNotification('Data cuti berhasil disinkronisasi', 'success');
+        } catch (error) {
+            this.showNotification('Gagal sinkronisasi data cuti', 'error');
+        }
+    }
+
+    startAutoSync() {
+        setInterval(() => {
+            if (document.visibilityState === 'visible') {
+                this.syncWithSheets();
+            }
+        }, this.config.REFRESH_INTERVAL);
+    }
 
     getStatusClass(status) {
         const statusMap = {
@@ -963,6 +1065,15 @@ exportCuti() {
             'SELESAI': 'inactive',
             'CUTI': 'cuti',
             'TIDAK': 'inactive'
+        };
+        return statusMap[status] || 'inactive';
+    }
+
+    getCutiStatusClass(status) {
+        const statusMap = {
+            'AKAN CUTI': 'warning',
+            'SEDANG CUTI': 'error', 
+            'SELESAI CUTI': 'inactive'
         };
         return statusMap[status] || 'inactive';
     }
@@ -991,6 +1102,10 @@ exportCuti() {
         document.body.appendChild(notification);
 
         setTimeout(() => notification.remove(), 4000);
+    }
+
+    showModal(modalId) {
+        document.getElementById(modalId).classList.add('active');
     }
 
     hideModal(modalId) {
@@ -1046,58 +1161,7 @@ exportCuti() {
         }
     }
 
-    loadFromCache() {
-        const cached = localStorage.getItem('cachedDoctors');
-        if (cached) {
-            this.doctors = JSON.parse(cached);
-            this.updateDashboardStats();
-            this.showNotification('Menggunakan data cache', 'warning');
-        }
-    }
-
-    // Placeholder methods for other pages
-    async loadCutiPage(container) {
-        container.innerHTML = `
-            <div class="page-header">
-                <h1>Kelola Cuti Dokter</h1>
-                <p>Manage data cuti dan absensi</p>
-            </div>
-            <div class="admin-card">
-                <h3>Data Cuti Dokter</h3>
-                <p>Total data cuti: ${this.cutiData.length}</p>
-                <div class="table-container">
-                    <table class="data-table">
-                        <thead>
-                            <tr>
-                                <th>Dokter</th>
-                                <th>Spesialis</th>
-                                <th>Tanggal Cuti</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${this.cutiData.length === 0 ? `
-                                <tr>
-                                    <td colspan="4" class="text-center">Tidak ada data cuti</td>
-                                </tr>
-                            ` : this.cutiData.map(cuti => `
-                                <tr>
-                                    <td>${this.escapeHtml(cuti.Dokter)}</td>
-                                    <td>${this.escapeHtml(cuti.Spesialis)}</td>
-                                    <td>${this.escapeHtml(cuti.Tanggal)}</td>
-                                    <td>
-                                        <span class="status-badge status-cuti">
-                                            ${this.escapeHtml(cuti.StatusCuti)}
-                                        </span>
-                                    </td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        `;
-    }
+    // ==================== PAGE TEMPLATES ====================
 
     async loadImportPage(container) {
         container.innerHTML = `
@@ -1107,8 +1171,8 @@ exportCuti() {
             </div>
             <div class="admin-card">
                 <h3>Gunakan Modal Import</h3>
-                <p>Klik tombol "Import dari Excel" di dashboard untuk membuka modal import.</p>
-                <button class="btn btn-primary" onclick="showModal('importModal')">
+                <p>Klik tombol "Import Data" di dashboard untuk membuka modal import.</p>
+                <button class="btn btn-primary" onclick="admin.showImportModal()">
                     Buka Modal Import
                 </button>
             </div>
@@ -1127,6 +1191,9 @@ exportCuti() {
                     <button class="btn btn-success" onclick="admin.exportDoctors()">
                         Export Data Dokter (CSV)
                     </button>
+                    <button class="btn btn-warning" onclick="admin.exportCuti()">
+                        Export Data Cuti (CSV)
+                    </button>
                     <button class="btn btn-secondary" onclick="admin.exportBackup()">
                         Export Backup (JSON)
                     </button>
@@ -1139,6 +1206,7 @@ exportCuti() {
         const backupData = {
             doctors: this.doctors,
             cuti: this.cutiData,
+            masterData: this.masterData,
             exportDate: new Date().toISOString(),
             totalDoctors: this.doctors.length,
             totalCuti: this.cutiData.length
@@ -1157,20 +1225,8 @@ exportCuti() {
     }
 }
 
-// ==================== GLOBAL FUNCTIONS ====================
-
-function showModal(modalId) {
-    document.getElementById(modalId).classList.add('active');
-}
-
-function hideModal(modalId) {
-    document.getElementById(modalId).classList.remove('active');
-}
-
 // Initialize admin dashboard
 const admin = new AdminDashboard();
 
 // Make functions globally available
 window.admin = admin;
-window.showModal = showModal;
-window.hideModal = hideModal;

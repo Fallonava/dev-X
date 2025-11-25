@@ -184,7 +184,7 @@
 
         .stat-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 16px;
         }
@@ -232,7 +232,7 @@
 
         .card-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
@@ -400,7 +400,7 @@
 
         .modal-header {
             display: flex;
-            justify-content: between;
+            justify-content: space-between;
             align-items: center;
             margin-bottom: 20px;
         }
@@ -480,6 +480,26 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* ===== NOTIFICATIONS ===== */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            z-index: 10000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .notification-success { background: var(--success); }
+        .notification-error { background: var(--error); }
+        .notification-warning { background: var(--warning); }
     </style>
 </head>
 <body>
@@ -535,10 +555,6 @@
                     <span class="material-icons">settings</span>
                     Settings
                 </div>
-                <div class="nav-item" data-page="users">
-                    <span class="material-icons">admin_panel_settings</span>
-                    User Management
-                </div>
                 <div class="nav-item" data-page="logs">
                     <span class="material-icons">list_alt</span>
                     Activity Log
@@ -561,7 +577,7 @@
                 <div id="dashboard-page" class="page-content active">
                     <div class="page-header">
                         <h1>Dashboard Overview</h1>
-                        <p>Monitor dan kelola data jadwal dokter</p>
+                        <p>Monitor dan kelola data jadwal dokter RSU Siaga Medika</p>
                     </div>
 
                     <!-- Quick Stats -->
@@ -616,7 +632,7 @@
                                 <span class="material-icons">upload</span>
                                 Import dari Excel
                             </button>
-                            <button class="btn btn-success" onclick="exportData()">
+                            <button class="btn btn-success" onclick="admin.exportDoctors()">
                                 <span class="material-icons">download</span>
                                 Export Data
                             </button>
@@ -627,7 +643,7 @@
                     <div class="admin-card">
                         <div class="card-header">
                             <h3>📋 Recent Activity</h3>
-                            <button class="btn btn-outline btn-sm" onclick="loadActivityLog()">
+                            <button class="btn btn-outline btn-sm" onclick="admin.loadActivityLog()">
                                 Refresh
                             </button>
                         </div>
@@ -642,7 +658,9 @@
                                     </tr>
                                 </thead>
                                 <tbody id="activityTable">
-                                    <!-- Activity data will be loaded here -->
+                                    <tr>
+                                        <td colspan="4" class="text-center">Memuat aktivitas...</td>
+                                    </tr>
                                 </tbody>
                             </table>
                         </div>
@@ -666,23 +684,23 @@
             <form id="addDoctorForm">
                 <div class="form-grid">
                     <div class="form-group">
-                        <label class="form-label">Nama Dokter</label>
-                        <input type="text" class="form-control" name="nama" required>
+                        <label class="form-label">Nama Dokter *</label>
+                        <input type="text" class="form-control" name="Dokter" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Spesialis</label>
-                        <input type="text" class="form-control" name="spesialis" required>
+                        <label class="form-label">Spesialis *</label>
+                        <input type="text" class="form-control" name="Spesialis" required>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Jenis</label>
-                        <select class="form-control" name="jenis" required>
+                        <label class="form-label">Jenis *</label>
+                        <select class="form-control" name="Jenis" required>
                             <option value="Bedah">Bedah</option>
                             <option value="Non Bedah">Non Bedah</option>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Status</label>
-                        <select class="form-control" name="status" required>
+                        <label class="form-label">Status *</label>
+                        <select class="form-control" name="Status" required>
                             <option value="BUKA">BUKA</option>
                             <option value="PENUH">PENUH</option>
                             <option value="SELESAI">SELESAI</option>
@@ -691,16 +709,19 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label class="form-label">Jam Praktek</label>
-                        <input type="text" class="form-control" name="jam" placeholder="08:00-12:00" required>
+                        <label class="form-label">Jam Praktek *</label>
+                        <input type="text" class="form-control" name="Jam" placeholder="08:00-12:00" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="email">
+                        <input type="email" class="form-control" name="Email">
                     </div>
                 </div>
                 <div class="card-actions">
-                    <button type="submit" class="btn btn-primary">Simpan Dokter</button>
+                    <button type="submit" class="btn btn-primary">
+                        <span class="material-icons">save</span>
+                        Simpan Dokter
+                    </button>
                     <button type="button" class="btn btn-outline" onclick="hideModal('addDoctorModal')">Batal</button>
                 </div>
             </form>
@@ -715,14 +736,15 @@
                 <button class="modal-close" onclick="hideModal('importModal')">×</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Pilih File Excel</label>
+                <label class="form-label">Pilih File Excel/CSV</label>
                 <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="form-control">
             </div>
             <div class="form-group">
                 <label class="form-label">Template</label>
                 <div>
-                    <button type="button" class="btn btn-outline" onclick="downloadTemplate()">
-                        📋 Download Template
+                    <button type="button" class="btn btn-outline" onclick="admin.downloadTemplate()">
+                        <span class="material-icons">download</span>
+                        Download Template
                     </button>
                 </div>
             </div>
@@ -735,7 +757,7 @@
                 </div>
             </div>
             <div class="card-actions">
-                <button class="btn btn-primary" onclick="processImport()" id="importBtn">
+                <button class="btn btn-primary" onclick="admin.processImport()" id="importBtn">
                     <span class="material-icons">upload</span>
                     Process Import
                 </button>
@@ -744,6 +766,6 @@
         </div>
     </div>
 
-    <script src="admin-dashboard.js"></script>
+    <script src="admin-dashboard-integrated.js"></script>
 </body>
 </html>

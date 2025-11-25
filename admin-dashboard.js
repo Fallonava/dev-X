@@ -52,6 +52,22 @@ class AdminDashboard {
         document.getElementById('confirmDeleteBtn').addEventListener('click', () => {
             this.confirmDelete();
         });
+
+            // Cuti Form
+document.getElementById('cutiForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    this.saveCuti(new FormData(e.target));
+});
+
+// Auto-fill spesialis ketika dokter dipilih
+document.getElementById('cutiDokter').addEventListener('change', (e) => {
+    this.autoFillSpesialis(e.target.value);
+});
+
+// Delete cuti confirmation
+document.getElementById('confirmDeleteCutiBtn').addEventListener('click', () => {
+    this.confirmDeleteCuti();
+});
     }
 
     navigateTo(page) {
@@ -367,7 +383,14 @@ class AdminDashboard {
             this.currentDeleteId = null;
         }
     }
-
+    autoFillSpesialis(dokterName) {
+    if (!dokterName) return;
+    
+    const doctor = this.doctors.find(d => d.Dokter === dokterName);
+    if (doctor) {
+        document.getElementById('cutiSpesialis').value = doctor.Spesialis || '';
+    }
+}
     // ==================== GOOGLE SHEETS CRUD OPERATIONS ====================
 
     async fetchFromSheet(url) {

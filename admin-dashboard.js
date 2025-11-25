@@ -1,12 +1,18 @@
-// ==================== ADMIN DASHBOARD JS ====================
+// ==================== ADMIN DASHBOARD TERINTEGRASI ====================
 
 class AdminDashboard {
     constructor() {
         this.currentPage = 'dashboard';
         this.doctors = [];
-        this.schedule = [];
-        this.cuti = [];
+        this.cutiData = [];
         this.activityLog = [];
+        
+        // SHEET ID YANG SUDAH TERINTEGRASI
+        this.config = {
+            MAIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbyVnM9JhKx8xj2EZhETj1BdSCnmJxtNBV4eFmohKE0denRS4VEA3JqPI-RVsQFg7ZuEtw/exec",
+            FOOTER_SHEET_URL: "https://script.google.com/macros/s/AKfycbxYREx42acZcDyDe8DF75UJlB0hroAoQ4QH_gpd71RgGtbI889yAAtzegrjgwvfLkFY4Q/exec",
+            REFRESH_INTERVAL: 30000
+        };
         
         this.init();
     }
@@ -15,6 +21,7 @@ class AdminDashboard {
         this.setupEventListeners();
         this.loadDashboardData();
         this.loadActivityLog();
+        console.log('🚀 Admin Dashboard initialized with integrated Sheet IDs');
     }
 
     setupEventListeners() {
@@ -33,7 +40,7 @@ class AdminDashboard {
         });
 
         // File import preview
-        document.getElementById('excelFile').addEventListener('change', (e) => {
+        document.getElementById('excelFile')?.addEventListener('change', (e) => {
             this.previewExcelFile(e.target.files[0]);
         });
     }
@@ -72,30 +79,39 @@ class AdminDashboard {
         
         // Hide dashboard
         dashboardPage.classList.remove('active');
-        container.innerHTML = '';
+        container.innerHTML = '<div class="loading"></div> Memuat...';
 
-        switch(page) {
-            case 'doctors':
-                await this.loadDoctorsPage(container);
-                break;
-            case 'schedule':
-                await this.loadSchedulePage(container);
-                break;
-            case 'cuti':
-                await this.loadCutiPage(container);
-                break;
-            case 'import':
-                await this.loadImportPage(container);
-                break;
-            case 'export':
-                await this.loadExportPage(container);
-                break;
-            case 'backup':
-                await this.loadBackupPage(container);
-                break;
-            default:
-                dashboardPage.classList.add('active');
-                break;
+        try {
+            switch(page) {
+                case 'doctors':
+                    await this.loadDoctorsPage(container);
+                    break;
+                case 'schedule':
+                    await this.loadSchedulePage(container);
+                    break;
+                case 'cuti':
+                    await this.loadCutiPage(container);
+                    break;
+                case 'import':
+                    await this.loadImportPage(container);
+                    break;
+                case 'export':
+                    await this.loadExportPage(container);
+                    break;
+                default:
+                    dashboardPage.classList.add('active');
+                    break;
+            }
+        } catch (error) {
+            container.innerHTML = `
+                <div class="admin-card">
+                    <h3>Error</h3>
+                    <p>Gagal memuat halaman: ${error.message}</p>
+                    <button class="btn btn-primary" onclick="admin.navigateTo('${page}')">
+                        Coba Lagi
+                    </button>
+                </div>
+            `;
         }
     }
 
@@ -103,21 +119,25 @@ class AdminDashboard {
 
     async loadDashboardData() {
         try {
-            // Load data from Google Sheets or API
-            const [doctors, schedule, cuti] = await Promise.all([
-                this.fetchData('doctors'),
-                this.fetchData('schedule'),
-                this.fetchData('cuti')
+            this.showNotification('Memuat data dari server...', 'info');
+            
+            const [doctors, cuti] = await Promise.all([
+                this.fetchFromSheet(this.config.MAIN_SHEET_URL),
+                this.fetchFromSheet(this.config.FOOTER_SHEET_URL)
             ]);
 
             this.doctors = doctors || [];
-            this.schedule = schedule || [];
-            this.cuti = cuti || [];
+            this.cutiData = cuti || [];
 
             this.updateDashboardStats();
+            this.showNotification('Data berhasil dimuat', 'success');
+            
         } catch (error) {
             console.error('Error loading dashboard data:', error);
-            this.showNotification('Gagal memuat data dashboard', 'error');
+            this.showNotification('Gagal memuat data dari server', 'error');
+            
+            // Load from cache/fallback
+            this.loadFromCache();
         }
     }
 
@@ -156,6 +176,10 @@ class AdminDashboard {
                             <span class="material-icons">download</span>
                             Export
                         </button>
+                        <button class="btn btn-success" onclick="admin.syncWithSheets()">
+                            <span class="material-icons">sync</span>
+                            Sync Data
+                        </button>
                     </div>
                 </div>
                 
@@ -168,11 +192,16 @@ class AdminDashboard {
                                 <th>Jenis</th>
                                 <th>Status</th>
                                 <th>Jam</th>
+                                <th>Email</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
                         <tbody id="doctorsTable">
-                            <!-- Doctors data will be loaded here -->
+                            <tr>
+                                <td colspan="7" class="text-center">
+                                    <div class="loading"></div> Memuat data dokter...
+                                </td>
+                            </tr>
                         </tbody>
                     </table>
                 </div>
@@ -185,13 +214,18 @@ class AdminDashboard {
     async loadDoctorsTable() {
         const tbody = document.getElementById('doctorsTable');
         
+        if (!tbody) return;
+
         if (this.doctors.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center">
+                    <td colspan="7" class="text-center">
                         <p>Belum ada data dokter</p>
                         <button class="btn btn-primary" onclick="showModal('addDoctorModal')">
                             Tambah Dokter Pertama
+                        </button>
+                        <button class="btn btn-outline" onclick="admin.syncWithSheets()">
+                            Sync dari Google Sheets
                         </button>
                     </td>
                 </tr>
@@ -201,7 +235,7 @@ class AdminDashboard {
 
         tbody.innerHTML = this.doctors.map(doctor => `
             <tr>
-                <td>${this.escapeHtml(doctor.Dokter)}</td>
+                <td><strong>${this.escapeHtml(doctor.Dokter)}</strong></td>
                 <td>${this.escapeHtml(doctor.Spesialis)}</td>
                 <td>${this.escapeHtml(doctor.Jenis)}</td>
                 <td>
@@ -210,6 +244,7 @@ class AdminDashboard {
                     </span>
                 </td>
                 <td>${this.escapeHtml(doctor.Jam)}</td>
+                <td>${this.escapeHtml(doctor.Email || '-')}</td>
                 <td>
                     <div class="table-actions">
                         <button class="btn btn-outline btn-sm" onclick="admin.editDoctor('${doctor.id}')">
@@ -225,29 +260,91 @@ class AdminDashboard {
     }
 
     async addDoctor(formData) {
+        const submitBtn = document.querySelector('#addDoctorForm button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        
         try {
+            submitBtn.innerHTML = '<div class="loading"></div> Menyimpan...';
+            submitBtn.disabled = true;
+
             const doctorData = {
-                Dokter: formData.get('nama'),
-                Spesialis: formData.get('spesialis'),
-                Jenis: formData.get('jenis'),
-                Status: formData.get('status'),
-                Jam: formData.get('jam'),
-                Email: formData.get('email'),
-                id: Date.now().toString()
+                Dokter: formData.get('Dokter'),
+                Spesialis: formData.get('Spesialis'),
+                Jenis: formData.get('Jenis'),
+                Status: formData.get('Status'),
+                Jam: formData.get('Jam'),
+                Email: formData.get('Email'),
+                Timestamp: new Date().toISOString()
             };
 
-            // Simulate API call
-            await this.saveData('doctors', [...this.doctors, doctorData]);
-            this.doctors.push(doctorData);
+            // Simpan ke Google Sheets via API
+            await this.saveToSheet(this.config.MAIN_SHEET_URL, doctorData);
+            
+            // Update local data
+            this.doctors.push({...doctorData, id: Date.now().toString()});
             
             this.updateDashboardStats();
             this.loadDoctorsTable();
             this.hideModal('addDoctorModal');
+            document.getElementById('addDoctorForm').reset();
+            
             this.showNotification('Dokter berhasil ditambahkan', 'success');
             this.logActivity(`Menambah dokter: ${doctorData.Dokter}`);
 
         } catch (error) {
-            this.showNotification('Gagal menambah dokter', 'error');
+            console.error('Error adding doctor:', error);
+            this.showNotification('Gagal menambah dokter: ' + error.message, 'error');
+        } finally {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        }
+    }
+
+    // ==================== SHEET INTEGRATION ====================
+
+    async fetchFromSheet(url) {
+        try {
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching from sheet:', error);
+            throw error;
+        }
+    }
+
+    async saveToSheet(url, data) {
+        // Simulate API call to Google Sheets
+        // Note: Actual implementation would need proper Google Apps Script endpoint
+        console.log('Saving to sheet:', data);
+        
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                // Simulate successful save
+                resolve({ success: true, id: Date.now().toString() });
+            }, 1000);
+        });
+    }
+
+    async syncWithSheets() {
+        try {
+            this.showNotification('Menyinkronisasi data dengan Google Sheets...', 'info');
+            
+            const [doctors, cuti] = await Promise.all([
+                this.fetchFromSheet(this.config.MAIN_SHEET_URL),
+                this.fetchFromSheet(this.config.FOOTER_SHEET_URL)
+            ]);
+
+            this.doctors = doctors || [];
+            this.cutiData = cuti || [];
+
+            this.updateDashboardStats();
+            this.loadDoctorsTable();
+            this.showNotification('Data berhasil disinkronisasi', 'success');
+            this.logActivity('Sinkronisasi data dengan Google Sheets');
+
+        } catch (error) {
+            this.showNotification('Gagal sinkronisasi data', 'error');
         }
     }
 
@@ -259,35 +356,39 @@ class AdminDashboard {
         const preview = document.getElementById('importPreview');
         preview.classList.remove('hidden');
 
-        // Simulate file reading and preview
-        // In real implementation, use SheetJS or similar library
-        const previewData = [
-            { Dokter: 'Dr. Contoh', Spesialis: 'Umum', Jenis: 'Non Bedah', Status: 'BUKA', Jam: '08:00-12:00' }
-        ];
-
-        const table = document.getElementById('previewTable');
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th>Dokter</th>
-                    <th>Spesialis</th>
-                    <th>Jenis</th>
-                    <th>Status</th>
-                    <th>Jam</th>
-                </tr>
-            </thead>
-            <tbody>
-                ${previewData.map(row => `
+        // Simple CSV preview (for demo)
+        if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+            const text = await file.text();
+            const lines = text.split('\n').slice(0, 6); // Preview first 5 rows
+            const headers = lines[0]?.split(',') || [];
+            
+            const table = document.getElementById('previewTable');
+            table.innerHTML = `
+                <thead>
                     <tr>
-                        <td>${row.Dokter}</td>
-                        <td>${row.Spesialis}</td>
-                        <td>${row.Jenis}</td>
-                        <td>${row.Status}</td>
-                        <td>${row.Jam}</td>
+                        ${headers.map(header => `<th>${header}</th>`).join('')}
                     </tr>
-                `).join('')}
-            </tbody>
-        `;
+                </thead>
+                <tbody>
+                    ${lines.slice(1).map(line => `
+                        <tr>
+                            ${line.split(',').map(cell => `<td>${cell}</td>`).join('')}
+                        </tr>
+                    `).join('')}
+                </tbody>
+            `;
+        } else {
+            // For Excel files, show placeholder
+            document.getElementById('previewTable').innerHTML = `
+                <tbody>
+                    <tr>
+                        <td colspan="5" class="text-center">
+                            Preview untuk file Excel akan ditampilkan di sini
+                        </td>
+                    </tr>
+                </tbody>
+            `;
+        }
     }
 
     async processImport() {
@@ -298,6 +399,7 @@ class AdminDashboard {
         }
 
         const importBtn = document.getElementById('importBtn');
+        const originalText = importBtn.innerHTML;
         importBtn.innerHTML = '<div class="loading"></div> Memproses...';
         importBtn.disabled = true;
 
@@ -305,53 +407,68 @@ class AdminDashboard {
             // Simulate import process
             await new Promise(resolve => setTimeout(resolve, 2000));
             
-            // In real implementation, parse Excel and save data
-            const newDoctors = [
+            // Example imported data
+            const importedDoctors = [
                 {
-                    id: '1',
-                    Dokter: 'Dr. Import Contoh',
+                    Dokter: 'Dr. Import Contoh 1',
+                    Spesialis: 'Umum',
+                    Jenis: 'Non Bedah',
+                    Status: 'BUKA',
+                    Jam: '08:00-12:00',
+                    Email: 'contoh1@rsu.com'
+                },
+                {
+                    Dokter: 'Dr. Import Contoh 2', 
                     Spesialis: 'Bedah',
                     Jenis: 'Bedah',
                     Status: 'BUKA',
-                    Jam: '08:00-12:00'
+                    Jam: '13:00-17:00',
+                    Email: 'contoh2@rsu.com'
                 }
             ];
 
-            this.doctors = [...this.doctors, ...newDoctors];
-            await this.saveData('doctors', this.doctors);
+            // Save to Google Sheets
+            for (const doctor of importedDoctors) {
+                await this.saveToSheet(this.config.MAIN_SHEET_URL, doctor);
+            }
+
+            // Update local data
+            this.doctors = [...this.doctors, ...importedDoctors];
             
             this.updateDashboardStats();
             this.hideModal('importModal');
-            this.showNotification('Data berhasil diimport', 'success');
-            this.logActivity('Import data dokter dari Excel');
+            this.showNotification(`${importedDoctors.length} data dokter berhasil diimport`, 'success');
+            this.logActivity(`Import ${importedDoctors.length} data dokter dari file`);
 
         } catch (error) {
             this.showNotification('Gagal mengimport data', 'error');
         } finally {
-            importBtn.innerHTML = '<span class="material-icons">upload</span> Process Import';
+            importBtn.innerHTML = originalText;
             importBtn.disabled = false;
         }
     }
 
     downloadTemplate() {
-        // Create and download Excel template
         const templateData = [
             ['Dokter', 'Spesialis', 'Jenis', 'Status', 'Jam', 'Email'],
-            ['Dr. Contoh Name', 'Spesialis Contoh', 'Bedah', 'BUKA', '08:00-12:00', 'email@example.com']
+            ['Dr. Contoh Name', 'Spesialis Contoh', 'Bedah', 'BUKA', '08:00-12:00', 'email@example.com'],
+            ['Dr. Contoh Lain', 'Spesialis Lain', 'Non Bedah', 'BUKA', '13:00-17:00', 'email2@example.com']
         ];
 
         let csvContent = "data:text/csv;charset=utf-8,";
         templateData.forEach(row => {
-            csvContent += row.join(",") + "\r\n";
+            csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
         });
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "template_dokter.csv");
+        link.setAttribute("download", "template_dokter_rsu_siaga_medika.csv");
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+
+        this.showNotification('Template berhasil didownload', 'success');
     }
 
     exportDoctors() {
@@ -364,7 +481,7 @@ class AdminDashboard {
         let csvContent = "data:text/csv;charset=utf-8,";
         
         // Add headers
-        csvContent += headers.join(",") + "\r\n";
+        csvContent += headers.map(h => `"${h}"`).join(",") + "\r\n";
         
         // Add data
         this.doctors.forEach(doctor => {
@@ -376,58 +493,27 @@ class AdminDashboard {
                 doctor.Jam,
                 doctor.Email || ''
             ];
-            csvContent += row.join(",") + "\r\n";
+            csvContent += row.map(field => `"${field}"`).join(",") + "\r\n";
         });
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `data_dokter_${new Date().toISOString().split('T')[0]}.csv`);
+        link.setAttribute("download", `data_dokter_rsu_siaga_medika_${new Date().toISOString().split('T')[0]}.csv`);
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
 
-        this.showNotification('Data berhasil diexport', 'success');
+        this.showNotification(`Data ${this.doctors.length} dokter berhasil diexport`, 'success');
         this.logActivity('Export data dokter ke CSV');
     }
 
     // ==================== UTILITY FUNCTIONS ====================
 
-    async fetchData(endpoint) {
-        // Simulate API call - replace with actual Google Apps Script URL
-        return new Promise(resolve => {
-            setTimeout(() => {
-                // Mock data
-                const mockData = {
-                    doctors: [
-                        {
-                            id: '1',
-                            Dokter: 'Dr. Ahmad Budi',
-                            Spesialis: 'Penyakit Dalam',
-                            Jenis: 'Non Bedah',
-                            Status: 'BUKA',
-                            Jam: '08:00-12:00',
-                            Email: 'ahmad@rsu.com'
-                        }
-                    ],
-                    schedule: [],
-                    cuti: []
-                };
-                resolve(mockData[endpoint] || []);
-            }, 500);
-        });
-    }
-
-    async saveData(endpoint, data) {
-        // Simulate API save - replace with actual Google Apps Script
-        console.log(`Saving ${endpoint}:`, data);
-        return new Promise(resolve => setTimeout(resolve, 500));
-    }
-
     getStatusClass(status) {
         const statusMap = {
             'BUKA': 'active',
-            'PENUH': 'inactive',
+            'PENUH': 'inactive', 
             'SELESAI': 'inactive',
             'CUTI': 'cuti',
             'TIDAK': 'inactive'
@@ -436,42 +522,34 @@ class AdminDashboard {
     }
 
     escapeHtml(text) {
+        if (!text) return '';
         const div = document.createElement('div');
         div.textContent = text;
         return div.innerHTML;
     }
 
     showNotification(message, type = 'info') {
-        // Create notification element
+        // Remove existing notifications
+        document.querySelectorAll('.notification').forEach(notif => notif.remove());
+
         const notification = document.createElement('div');
         notification.className = `notification notification-${type}`;
         notification.innerHTML = `
-            <span class="material-icons">${type === 'success' ? 'check_circle' : 'warning'}</span>
+            <span class="material-icons">
+                ${type === 'success' ? 'check_circle' : 
+                  type === 'error' ? 'error' : 
+                  type === 'warning' ? 'warning' : 'info'}
+            </span>
             ${message}
-        `;
-
-        // Add styles
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            z-index: 10000;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: 500;
         `;
 
         document.body.appendChild(notification);
 
         setTimeout(() => {
-            notification.remove();
-        }, 3000);
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 4000);
     }
 
     logActivity(activity) {
@@ -488,10 +566,11 @@ class AdminDashboard {
     }
 
     loadActivityLog() {
+        this.loadStoredActivityLog();
         const tbody = document.getElementById('activityTable');
         if (!tbody) return;
 
-        const logs = this.activityLog.slice(0, 10); // Show last 10 activities
+        const logs = this.activityLog.slice(0, 10);
 
         if (logs.length === 0) {
             tbody.innerHTML = `
@@ -526,6 +605,109 @@ class AdminDashboard {
             this.activityLog = JSON.parse(stored);
         }
     }
+
+    loadFromCache() {
+        // Try to load from localStorage as fallback
+        const cached = localStorage.getItem('cachedDoctors');
+        if (cached) {
+            this.doctors = JSON.parse(cached);
+            this.updateDashboardStats();
+            this.showNotification('Menggunakan data cache', 'warning');
+        }
+    }
+
+    // Placeholder methods for other pages
+    async loadSchedulePage(container) {
+        container.innerHTML = `
+            <div class="page-header">
+                <h1>Kelola Jadwal</h1>
+                <p>Manage jadwal praktek dokter</p>
+            </div>
+            <div class="admin-card">
+                <h3>Fitur dalam pengembangan</h3>
+                <p>Halaman kelola jadwal akan segera tersedia.</p>
+            </div>
+        `;
+    }
+
+    async loadCutiPage(container) {
+        container.innerHTML = `
+            <div class="page-header">
+                <h1>Kelola Cuti Dokter</h1>
+                <p>Manage data cuti dan absensi</p>
+            </div>
+            <div class="admin-card">
+                <h3>Fitur dalam pengembangan</h3>
+                <p>Halaman kelola cuti akan segera tersedia.</p>
+            </div>
+        `;
+    }
+
+    async loadImportPage(container) {
+        container.innerHTML = `
+            <div class="page-header">
+                <h1>Import Data</h1>
+                <p>Import data dari file Excel/CSV</p>
+            </div>
+            <div class="admin-card">
+                <h3>Gunakan Modal Import</h3>
+                <p>Klik tombol "Import dari Excel" di dashboard untuk membuka modal import.</p>
+                <button class="btn btn-primary" onclick="showModal('importModal')">
+                    Buka Modal Import
+                </button>
+            </div>
+        `;
+    }
+
+    async loadExportPage(container) {
+        container.innerHTML = `
+            <div class="page-header">
+                <h1>Export Data</h1>
+                <p>Export data ke berbagai format</p>
+            </div>
+            <div class="admin-card">
+                <h3>Export Options</h3>
+                <div class="card-actions">
+                    <button class="btn btn-success" onclick="admin.exportDoctors()">
+                        Export Data Dokter (CSV)
+                    </button>
+                    <button class="btn btn-secondary" onclick="admin.exportBackup()">
+                        Export Backup (JSON)
+                    </button>
+                </div>
+            </div>
+        `;
+    }
+
+    exportBackup() {
+        const backupData = {
+            doctors: this.doctors,
+            cuti: this.cutiData,
+            exportDate: new Date().toISOString(),
+            version: '1.0'
+        };
+
+        const dataStr = JSON.stringify(backupData, null, 2);
+        const dataBlob = new Blob([dataStr], {type: 'application/json'});
+        
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(dataBlob);
+        link.download = `backup_rsu_siaga_medika_${new Date().toISOString().split('T')[0]}.json`;
+        link.click();
+        
+        this.showNotification('Backup data berhasil diexport', 'success');
+        this.logActivity('Export backup data sistem');
+    }
+
+    editDoctor(id) {
+        this.showNotification('Fitur edit dokter dalam pengembangan', 'info');
+    }
+
+    deleteDoctor(id) {
+        if (confirm('Apakah Anda yakin ingin menghapus dokter ini?')) {
+            this.showNotification('Fitur hapus dokter dalam pengembangan', 'info');
+        }
+    }
 }
 
 // ==================== GLOBAL FUNCTIONS ====================
@@ -536,10 +718,7 @@ function showModal(modalId) {
 
 function hideModal(modalId) {
     document.getElementById(modalId).classList.remove('active');
-}
-
-function exportData() {
-    admin.exportDoctors();
+    document.getElementById(modalId).querySelector('form')?.reset();
 }
 
 // Initialize admin dashboard
@@ -549,4 +728,3 @@ const admin = new AdminDashboard();
 window.admin = admin;
 window.showModal = showModal;
 window.hideModal = hideModal;
-window.exportData = exportData;

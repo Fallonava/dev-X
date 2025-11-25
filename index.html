@@ -333,6 +333,11 @@
             background: white;
         }
 
+        textarea.form-control {
+            resize: vertical;
+            min-height: 80px;
+        }
+
         /* ===== TABLES ===== */
         .table-container {
             overflow-x: auto;
@@ -433,6 +438,7 @@
         .status-active { background: #d1fae5; color: #065f46; }
         .status-inactive { background: #fef3c7; color: #92400e; }
         .status-cuti { background: #fee2e2; color: #991b1b; }
+        .status-warning { background: #fef3c7; color: #92400e; }
 
         /* ===== LOADING ===== */
         .loading {
@@ -574,21 +580,21 @@
                     <div class="admin-card">
                         <h3>🚀 Quick Actions</h3>
                         <div class="card-actions">
-                            <button class="btn btn-primary" onclick="showModal('addDoctorModal')">
+                            <button class="btn btn-primary" onclick="admin.showAddDoctorModal()">
                                 <span class="material-icons">add</span>
-                                Tambah Dokter Baru
+                                Tambah Dokter
                             </button>
-                            <button class="btn btn-secondary" onclick="showModal('importModal')">
+                            <button class="btn btn-warning" onclick="admin.showAddCutiModal()">
+                                <span class="material-icons">beach_access</span>
+                                Tambah Cuti
+                            </button>
+                            <button class="btn btn-secondary" onclick="admin.showImportModal()">
                                 <span class="material-icons">upload</span>
-                                Import dari Excel
+                                Import Data
                             </button>
-                            <button class="btn btn-success" onclick="admin.exportDoctors()">
-                                <span class="material-icons">download</span>
-                                Export Data
-                            </button>
-                            <button class="btn btn-warning" onclick="admin.syncWithSheets()">
+                            <button class="btn btn-success" onclick="admin.syncWithSheets()">
                                 <span class="material-icons">sync</span>
-                                Sync Data
+                                Sync All Data
                             </button>
                         </div>
                     </div>
@@ -633,7 +639,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 id="doctorModalTitle">Tambah Dokter Baru</h3>
-                <button class="modal-close" onclick="hideModal('doctorModal')">×</button>
+                <button class="modal-close" onclick="admin.hideModal('doctorModal')">×</button>
             </div>
             <form id="doctorForm">
                 <input type="hidden" id="editDoctorId" name="id">
@@ -644,11 +650,14 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Spesialis *</label>
-                        <input type="text" class="form-control" id="doctorSpesialis" name="Spesialis" required>
+                        <select class="form-control" id="doctorSpesialis" name="Spesialis" required>
+                            <option value="">Pilih Spesialis</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jenis *</label>
                         <select class="form-control" id="doctorJenis" name="Jenis" required>
+                            <option value="">Pilih Jenis</option>
                             <option value="Bedah">Bedah</option>
                             <option value="Non Bedah">Non Bedah</option>
                         </select>
@@ -656,16 +665,14 @@
                     <div class="form-group">
                         <label class="form-label">Status *</label>
                         <select class="form-control" id="doctorStatus" name="Status" required>
-                            <option value="BUKA">BUKA</option>
-                            <option value="PENUH">PENUH</option>
-                            <option value="SELESAI">SELESAI</option>
-                            <option value="CUTI">CUTI</option>
-                            <option value="TIDAK">TIDAK</option>
+                            <option value="">Pilih Status</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jam Praktek *</label>
-                        <input type="text" class="form-control" id="doctorJam" name="Jam" placeholder="08:00-12:00" required>
+                        <select class="form-control" id="doctorJam" name="Jam" required>
+                            <option value="">Pilih Jam</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
@@ -677,96 +684,77 @@
                         <span class="material-icons">save</span>
                         Simpan Dokter
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="hideModal('doctorModal')">Batal</button>
+                    <button type="button" class="btn btn-outline" onclick="admin.hideModal('doctorModal')">Batal</button>
                 </div>
             </form>
         </div>
     </div>
-    <!-- Add/Edit Cuti Modal -->
-<div id="cutiModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3 id="cutiModalTitle">Tambah Data Cuti</h3>
-            <button class="modal-close" onclick="hideModal('cutiModal')">×</button>
-        </div>
-        <form id="cutiForm">
-            <input type="hidden" id="editCutiId" name="id">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label class="form-label">Nama Dokter *</label>
-                    <select class="form-control" id="cutiDokter" name="Dokter" required>
-                        <option value="">Pilih Dokter</option>
-                        <!-- Options akan diisi dari data dokter -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Spesialis *</label>
-                    <input type="text" class="form-control" id="cutiSpesialis" name="Spesialis" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Tanggal Cuti *</label>
-                    <input type="text" class="form-control" id="cutiTanggal" name="Tanggal" 
-                           placeholder="22 - 25 November 2024" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Status Cuti *</label>
-                    <select class="form-control" id="cutiStatus" name="StatusCuti" required>
-                        <option value="AKAN CUTI">AKAN CUTI</option>
-                        <option value="SEDANG CUTI">SEDANG CUTI</option>
-                        <option value="SELESAI CUTI">SELESAI CUTI</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Keterangan</label>
-                    <textarea class="form-control" id="cutiKeterangan" name="Keterangan" 
-                              placeholder="Keterangan tambahan..." rows="3"></textarea>
-                </div>
-            </div>
-            <div class="card-actions">
-                <button type="submit" class="btn btn-primary" id="cutiSubmitBtn">
-                    <span class="material-icons">save</span>
-                    Simpan Data Cuti
-                </button>
-                <button type="button" class="btn btn-outline" onclick="hideModal('cutiModal')">Batal</button>
-            </div>
-        </form>
-    </div>
-</div>
 
-<!-- Delete Cuti Confirmation Modal -->
-<div id="deleteCutiModal" class="modal">
-    <div class="modal-content">
-        <div class="modal-header">
-            <h3>Konfirmasi Hapus Cuti</h3>
-            <button class="modal-close" onclick="hideModal('deleteCutiModal')">×</button>
-        </div>
-        <div class="admin-card">
-            <p id="deleteCutiMessage">Apakah Anda yakin ingin menghapus data cuti ini?</p>
-            <div class="card-actions">
-                <button class="btn btn-error" id="confirmDeleteCutiBtn">
-                    <span class="material-icons">delete</span>
-                    Ya, Hapus
-                </button>
-                <button class="btn btn-outline" onclick="hideModal('deleteCutiModal')">Batal</button>
+    <!-- Add/Edit Cuti Modal -->
+    <div id="cutiModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="cutiModalTitle">Tambah Data Cuti</h3>
+                <button class="modal-close" onclick="admin.hideModal('cutiModal')">×</button>
             </div>
+            <form id="cutiForm">
+                <input type="hidden" id="editCutiId" name="id">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label">Nama Dokter *</label>
+                        <select class="form-control" id="cutiDokter" name="Dokter" required>
+                            <option value="">Pilih Dokter</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Spesialis *</label>
+                        <input type="text" class="form-control" id="cutiSpesialis" name="Spesialis" required readonly>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Tanggal Cuti *</label>
+                        <input type="text" class="form-control" id="cutiTanggal" name="Tanggal" 
+                               placeholder="22 - 25 November 2024" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Status Cuti *</label>
+                        <select class="form-control" id="cutiStatus" name="StatusCuti" required>
+                            <option value="AKAN CUTI">AKAN CUTI</option>
+                            <option value="SEDANG CUTI">SEDANG CUTI</option>
+                            <option value="SELESAI CUTI">SELESAI CUTI</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Keterangan</label>
+                        <textarea class="form-control" id="cutiKeterangan" name="Keterangan" 
+                                  placeholder="Keterangan tambahan..." rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="card-actions">
+                    <button type="submit" class="btn btn-primary" id="cutiSubmitBtn">
+                        <span class="material-icons">save</span>
+                        Simpan Data Cuti
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="admin.hideModal('cutiModal')">Batal</button>
+                </div>
+            </form>
         </div>
     </div>
-</div>
+
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h3>Konfirmasi Hapus</h3>
-                <button class="modal-close" onclick="hideModal('deleteModal')">×</button>
+                <button class="modal-close" onclick="admin.hideModal('deleteModal')">×</button>
             </div>
             <div class="admin-card">
-                <p id="deleteMessage">Apakah Anda yakin ingin menghapus dokter ini?</p>
+                <p id="deleteMessage">Apakah Anda yakin ingin menghapus data ini?</p>
                 <div class="card-actions">
                     <button class="btn btn-error" id="confirmDeleteBtn">
                         <span class="material-icons">delete</span>
                         Ya, Hapus
                     </button>
-                    <button class="btn btn-outline" onclick="hideModal('deleteModal')">Batal</button>
+                    <button class="btn btn-outline" onclick="admin.hideModal('deleteModal')">Batal</button>
                 </div>
             </div>
         </div>
@@ -776,19 +764,30 @@
     <div id="importModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Import Data dari Excel</h3>
-                <button class="modal-close" onclick="hideModal('importModal')">×</button>
+                <h3>Import Data dari Excel/CSV</h3>
+                <button class="modal-close" onclick="admin.hideModal('importModal')">×</button>
             </div>
             <div class="form-group">
-                <label class="form-label">Pilih File Excel/CSV</label>
+                <label class="form-label">Pilih File</label>
                 <input type="file" id="excelFile" accept=".xlsx,.xls,.csv" class="form-control">
             </div>
             <div class="form-group">
+                <label class="form-label">Jenis Data</label>
+                <select class="form-control" id="importType">
+                    <option value="doctors">Data Dokter</option>
+                    <option value="cuti">Data Cuti</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label class="form-label">Template</label>
-                <div>
-                    <button type="button" class="btn btn-outline" onclick="admin.downloadTemplate()">
+                <div class="card-actions">
+                    <button type="button" class="btn btn-outline" onclick="admin.downloadTemplate('doctors')">
                         <span class="material-icons">download</span>
-                        Download Template
+                        Template Dokter
+                    </button>
+                    <button type="button" class="btn btn-outline" onclick="admin.downloadTemplate('cuti')">
+                        <span class="material-icons">download</span>
+                        Template Cuti
                     </button>
                 </div>
             </div>
@@ -809,11 +808,11 @@
                     <span class="material-icons">upload</span>
                     Process Import
                 </button>
-                <button class="btn btn-outline" onclick="hideModal('importModal')">Batal</button>
+                <button class="btn btn-outline" onclick="admin.hideModal('importModal')">Batal</button>
             </div>
         </div>
     </div>
 
-    <script src="admin-dashboard.js"></script>
+    <script src="admin-dashboard-full.js"></script>
 </body>
 </html>

@@ -4,7 +4,7 @@ function doPost(e) {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
     
-    const sheet = SpreadsheetApp.openById('YOUR_SHEET_ID');
+    const sheet = SpreadsheetApp.openById('AKfycbyVnM9JhKx8xj2EZhETj1BdSCnmJxtNBV4eFmohKE0denRS4VEA3JqPI-RVsQFg7ZuEtw');
     
     switch(action) {
       case 'get_doctors':

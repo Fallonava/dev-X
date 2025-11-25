@@ -13,7 +13,7 @@ class AdminDashboard {
         this.config = {
             MAIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbyVnM9JhKx8xj2EZhETj1BdSCnmJxtNBV4eFmohKE0denRS4VEA3JqPI-RVsQFg7ZuEtw/exec",
             FOOTER_SHEET_URL: "https://script.google.com/macros/s/AKfycbxYREx42acZcDyDe8DF75UJlB0hroAoQ4QH_gpd71RgGtbI889yAAtzegrjgwvfLkFY4Q/exec",
-            ADMIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbwQlCK0qX6QdP0_5k8mJxYv6V9zH8s6Qe3qk5h5J9ZfJw/s/exec", // Ganti dengan Admin Script URL Anda
+            ADMIN_SHEET_URL: "https://script.google.com/macros/s/AKfycbwEAx0R9LqxEDhkwXX8W6-8ZclVnh0Jl7OJ9J333PHghZkqwPu4Z-Usxc2hgtPN8e8/exec", // Ganti dengan Admin Script URL Anda
             REFRESH_INTERVAL: 30000
         };
         

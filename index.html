@@ -682,7 +682,76 @@
             </form>
         </div>
     </div>
+    <!-- Add/Edit Cuti Modal -->
+<div id="cutiModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 id="cutiModalTitle">Tambah Data Cuti</h3>
+            <button class="modal-close" onclick="hideModal('cutiModal')">×</button>
+        </div>
+        <form id="cutiForm">
+            <input type="hidden" id="editCutiId" name="id">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label class="form-label">Nama Dokter *</label>
+                    <select class="form-control" id="cutiDokter" name="Dokter" required>
+                        <option value="">Pilih Dokter</option>
+                        <!-- Options akan diisi dari data dokter -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Spesialis *</label>
+                    <input type="text" class="form-control" id="cutiSpesialis" name="Spesialis" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tanggal Cuti *</label>
+                    <input type="text" class="form-control" id="cutiTanggal" name="Tanggal" 
+                           placeholder="22 - 25 November 2024" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Status Cuti *</label>
+                    <select class="form-control" id="cutiStatus" name="StatusCuti" required>
+                        <option value="AKAN CUTI">AKAN CUTI</option>
+                        <option value="SEDANG CUTI">SEDANG CUTI</option>
+                        <option value="SELESAI CUTI">SELESAI CUTI</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Keterangan</label>
+                    <textarea class="form-control" id="cutiKeterangan" name="Keterangan" 
+                              placeholder="Keterangan tambahan..." rows="3"></textarea>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button type="submit" class="btn btn-primary" id="cutiSubmitBtn">
+                    <span class="material-icons">save</span>
+                    Simpan Data Cuti
+                </button>
+                <button type="button" class="btn btn-outline" onclick="hideModal('cutiModal')">Batal</button>
+            </div>
+        </form>
+    </div>
+</div>
 
+<!-- Delete Cuti Confirmation Modal -->
+<div id="deleteCutiModal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Konfirmasi Hapus Cuti</h3>
+            <button class="modal-close" onclick="hideModal('deleteCutiModal')">×</button>
+        </div>
+        <div class="admin-card">
+            <p id="deleteCutiMessage">Apakah Anda yakin ingin menghapus data cuti ini?</p>
+            <div class="card-actions">
+                <button class="btn btn-error" id="confirmDeleteCutiBtn">
+                    <span class="material-icons">delete</span>
+                    Ya, Hapus
+                </button>
+                <button class="btn btn-outline" onclick="hideModal('deleteCutiModal')">Batal</button>
+            </div>
+        </div>
+    </div>
+</div>
     <!-- Delete Confirmation Modal -->
     <div id="deleteModal" class="modal">
         <div class="modal-content">

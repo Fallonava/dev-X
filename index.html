@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - RSU Siaga Medika</title>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
     <style>
         :root {
             --primary: #2563eb;
@@ -413,36 +412,6 @@
             color: var(--text-light);
         }
 
-        /* ===== TABS ===== */
-        .tabs {
-            display: flex;
-            border-bottom: 1px solid var(--border);
-            margin-bottom: 20px;
-        }
-
-        .tab {
-            padding: 12px 24px;
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-weight: 500;
-            color: var(--text-light);
-            border-bottom: 2px solid transparent;
-        }
-
-        .tab.active {
-            color: var(--primary);
-            border-bottom-color: var(--primary);
-        }
-
-        .tab-content {
-            display: none;
-        }
-
-        .tab-content.active {
-            display: block;
-        }
-
         /* ===== UTILITIES ===== */
         .hidden {
             display: none !important;
@@ -500,6 +469,7 @@
         .notification-success { background: var(--success); }
         .notification-error { background: var(--error); }
         .notification-warning { background: var(--warning); }
+        .notification-info { background: var(--primary); }
     </style>
 </head>
 <body>
@@ -523,10 +493,6 @@
                     <span class="material-icons">people</span>
                     Kelola Dokter
                 </div>
-                <div class="nav-item" data-page="schedule">
-                    <span class="material-icons">schedule</span>
-                    Kelola Jadwal
-                </div>
                 <div class="nav-item" data-page="cuti">
                     <span class="material-icons">beach_access</span>
                     Kelola Cuti
@@ -543,22 +509,6 @@
                     <span class="material-icons">file_download</span>
                     Export Data
                 </div>
-                <div class="nav-item" data-page="backup">
-                    <span class="material-icons">backup</span>
-                    Backup & Restore
-                </div>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-title">System</div>
-                <div class="nav-item" data-page="settings">
-                    <span class="material-icons">settings</span>
-                    Settings
-                </div>
-                <div class="nav-item" data-page="logs">
-                    <span class="material-icons">list_alt</span>
-                    Activity Log
-                </div>
             </div>
         </div>
 
@@ -567,7 +517,7 @@
             <div class="top-bar">
                 <h2 id="pageTitle">Dashboard</h2>
                 <div class="user-menu">
-                    <span>Welcome, Admin</span>
+                    <span id="lastSync">Loading...</span>
                     <div class="user-avatar">A</div>
                 </div>
             </div>
@@ -636,6 +586,10 @@
                                 <span class="material-icons">download</span>
                                 Export Data
                             </button>
+                            <button class="btn btn-warning" onclick="admin.syncWithSheets()">
+                                <span class="material-icons">sync</span>
+                                Sync Data
+                            </button>
                         </div>
                     </div>
 
@@ -674,33 +628,34 @@
     </div>
 
     <!-- MODALS -->
-    <!-- Add Doctor Modal -->
-    <div id="addDoctorModal" class="modal">
+    <!-- Add/Edit Doctor Modal -->
+    <div id="doctorModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3>Tambah Dokter Baru</h3>
-                <button class="modal-close" onclick="hideModal('addDoctorModal')">×</button>
+                <h3 id="doctorModalTitle">Tambah Dokter Baru</h3>
+                <button class="modal-close" onclick="hideModal('doctorModal')">×</button>
             </div>
-            <form id="addDoctorForm">
+            <form id="doctorForm">
+                <input type="hidden" id="editDoctorId" name="id">
                 <div class="form-grid">
                     <div class="form-group">
                         <label class="form-label">Nama Dokter *</label>
-                        <input type="text" class="form-control" name="Dokter" required>
+                        <input type="text" class="form-control" id="doctorName" name="Dokter" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Spesialis *</label>
-                        <input type="text" class="form-control" name="Spesialis" required>
+                        <input type="text" class="form-control" id="doctorSpesialis" name="Spesialis" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jenis *</label>
-                        <select class="form-control" name="Jenis" required>
+                        <select class="form-control" id="doctorJenis" name="Jenis" required>
                             <option value="Bedah">Bedah</option>
                             <option value="Non Bedah">Non Bedah</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Status *</label>
-                        <select class="form-control" name="Status" required>
+                        <select class="form-control" id="doctorStatus" name="Status" required>
                             <option value="BUKA">BUKA</option>
                             <option value="PENUH">PENUH</option>
                             <option value="SELESAI">SELESAI</option>
@@ -710,21 +665,41 @@
                     </div>
                     <div class="form-group">
                         <label class="form-label">Jam Praktek *</label>
-                        <input type="text" class="form-control" name="Jam" placeholder="08:00-12:00" required>
+                        <input type="text" class="form-control" id="doctorJam" name="Jam" placeholder="08:00-12:00" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Email</label>
-                        <input type="email" class="form-control" name="Email">
+                        <input type="email" class="form-control" id="doctorEmail" name="Email">
                     </div>
                 </div>
                 <div class="card-actions">
-                    <button type="submit" class="btn btn-primary">
+                    <button type="submit" class="btn btn-primary" id="doctorSubmitBtn">
                         <span class="material-icons">save</span>
                         Simpan Dokter
                     </button>
-                    <button type="button" class="btn btn-outline" onclick="hideModal('addDoctorModal')">Batal</button>
+                    <button type="button" class="btn btn-outline" onclick="hideModal('doctorModal')">Batal</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Konfirmasi Hapus</h3>
+                <button class="modal-close" onclick="hideModal('deleteModal')">×</button>
+            </div>
+            <div class="admin-card">
+                <p id="deleteMessage">Apakah Anda yakin ingin menghapus dokter ini?</p>
+                <div class="card-actions">
+                    <button class="btn btn-error" id="confirmDeleteBtn">
+                        <span class="material-icons">delete</span>
+                        Ya, Hapus
+                    </button>
+                    <button class="btn btn-outline" onclick="hideModal('deleteModal')">Batal</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -752,7 +727,11 @@
                 <h4>Preview Data</h4>
                 <div class="table-container">
                     <table class="data-table" id="previewTable">
-                        <!-- Preview data will be shown here -->
+                        <tbody>
+                            <tr>
+                                <td colspan="5" class="text-center">Pilih file untuk preview</td>
+                            </tr>
+                        </tbody>
                     </table>
                 </div>
             </div>
@@ -766,6 +745,6 @@
         </div>
     </div>
 
-    <script src="admin-dashboard-integrated.js"></script>
+    <script src="admin-dashboard.js"></script>
 </body>
 </html>

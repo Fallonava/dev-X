@@ -1,0 +1,16 @@
+{
+  "name": "portfolio-ultimate",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "svelte-kit dev",
+    "build": "svelte-kit build",
+    "preview": "svelte-kit preview"
+  },
+  "dependencies": {
+    "@sveltejs/kit": "next",
+    "@studio-freight/lenis": "^0.2.34",
+    "gsap": "^3.12.0",
+    "svelte": "^4.0.0"
+  }
+}

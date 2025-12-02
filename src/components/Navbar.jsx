@@ -10,11 +10,11 @@ export default function Navbar() {
   };
 
   useEffect(() => {
-    // Initial entry animation
+    // Initial entry animation - Heavy ease, appears first
     gsap.fromTo(
       ".navbar",
       { y: -100, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", delay: 0.2 }
+      { y: 0, opacity: 1, duration: 1.2, ease: "cubic-bezier(0.2, 0.8, 0.2, 1.0)", delay: 0.1 }
     );
   }, []);
 
@@ -97,9 +97,9 @@ export default function Navbar() {
           left: 0;
           right: 0;
           height: 48px; /* Apple standard is often 44px or 48px */
-          background: rgba(0, 0, 0, 0.8);
-          backdrop-filter: saturate(180%) blur(20px);
-          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          background: rgba(20, 20, 20, 0.7); /* Specific Apple dark glass */
+          backdrop-filter: saturate(180%) blur(25px); /* High saturation and blur */
+          -webkit-backdrop-filter: saturate(180%) blur(25px);
           z-index: 1000;
           transition: background 0.3s ease;
           display: flex;

@@ -219,6 +219,7 @@ export default function GravityHero() {
                     align-items: center;
                     justify-content: center;
                     padding-top: 80px;
+                    background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%); /* Cinematic Dark Mode */
                 }
 
                 .matter-scene {
@@ -239,7 +240,7 @@ export default function GravityHero() {
                 }
 
                 .hero-content {
-                    max-width: 900px;
+                    max-width: 1000px; /* Increased max-width for massive text */
                     text-align: center;
                     margin: 0 auto;
                     pointer-events: auto;
@@ -250,36 +251,42 @@ export default function GravityHero() {
 
                 /* Hero Title Animation */
                 .hero-title {
-                    font-size: 3.5rem;
-                    line-height: 1.1;
+                    font-size: 5rem; /* Massive size */
+                    font-weight: 800; /* Heavy weight */
+                    letter-spacing: -0.03em;
+                    line-height: 1.05;
                     margin-bottom: 32px;
+                    color: #f5f5f7;
                     background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                     
                     /* Initial State */
                     opacity: 0;
-                    transform: translateY(20px);
-                    transition: opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transform: translateY(30px) scale(0.98); /* Focus effect start */
+                    filter: blur(10px); /* Focus effect start */
+                    transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1.0); /* Heavy ease */
+                    transition-delay: 0.2s; /* Stagger: after Navbar */
                 }
 
                 .hero-title.visible {
                     opacity: 1;
-                    transform: translateY(0);
+                    transform: translateY(0) scale(1);
+                    filter: blur(0);
                 }
 
                 /* Hero Image Animation */
                 .hero-image-container {
                     margin: 0 auto 40px;
                     width: 100%;
-                    max-width: 600px;
+                    max-width: 700px;
                     
                     /* Initial State */
                     opacity: 0;
                     transform: scale(0.95);
-                    filter: blur(5px);
-                    transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-                    transition-delay: 0.3s; /* 0.3s after title */
+                    filter: blur(10px);
+                    transition: all 1.4s cubic-bezier(0.2, 0.8, 0.2, 1.0); /* Heavy ease */
+                    transition-delay: 0.8s; /* Stagger: last */
                 }
 
                 .hero-image-container.visible {
@@ -291,64 +298,71 @@ export default function GravityHero() {
                 .hero-image-placeholder {
                     width: 100%;
                     aspect-ratio: 16/9;
-                    background: rgba(255, 255, 255, 0.05);
+                    background: rgba(255, 255, 255, 0.03);
                     border: 1px solid rgba(255, 255, 255, 0.1);
                     border-radius: 24px;
-                    backdrop-filter: blur(10px);
+                    backdrop-filter: blur(20px);
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+                    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 20px 50px rgba(0,0,0,0.5); /* Rim lighting simulation */
                 }
                 
                 .placeholder-screen {
-                    width: 90%;
-                    height: 85%;
-                    background: rgba(0,0,0,0.3);
-                    border-radius: 16px;
+                    width: 95%;
+                    height: 90%;
+                    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
+                    border-radius: 18px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    border: 1px solid rgba(255,255,255,0.05);
+                    border: 1px solid rgba(255,255,255,0.1);
+                    box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
                 }
                 
                 .placeholder-content span {
-                    color: rgba(255,255,255,0.3);
-                    font-weight: 500;
-                    font-size: 1.2rem;
+                    color: rgba(255,255,255,0.5);
+                    font-weight: 600;
+                    font-size: 1.5rem;
+                    letter-spacing: -0.02em;
                 }
 
                 /* Description Animation */
                 .hero-desc {
-                    font-size: 1.25rem;
-                    color: var(--text-secondary);
+                    font-size: 1.5rem; /* Larger sub-headline */
+                    color: #86868b; /* Medium gray */
+                    font-weight: 500;
                     margin-bottom: 40px;
-                    line-height: 1.6;
+                    line-height: 1.4;
                     max-width: 700px;
+                    letter-spacing: -0.01em;
                     
                     /* Initial State */
                     opacity: 0;
                     transform: translateY(20px);
-                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-                    transition-delay: 0.5s;
+                    filter: blur(5px);
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1.0);
+                    transition-delay: 0.4s; /* Stagger: after title */
                 }
 
                 .hero-desc.visible {
                     opacity: 1;
                     transform: translateY(0);
+                    filter: blur(0);
                 }
 
                 /* Buttons Animation */
                 .hero-buttons {
                     display: flex;
-                    gap: 16px;
+                    gap: 24px;
                     justify-content: center;
+                    align-items: center;
                     
                     /* Initial State */
                     opacity: 0;
                     transform: translateY(20px);
-                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
-                    transition-delay: 0.6s;
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1.0);
+                    transition-delay: 0.6s; /* Stagger: after desc */
                 }
 
                 .hero-buttons.visible {
@@ -356,55 +370,66 @@ export default function GravityHero() {
                     transform: translateY(0);
                 }
 
-                .btn {
-                    padding: 16px 32px;
-                    border-radius: 100px;
+                /* Minimalist Text Link Button */
+                .btn-primary {
+                    background: transparent;
+                    color: #2997ff; /* Apple Blue */
+                    font-size: 19px;
                     font-weight: 600;
-                    text-decoration: none;
-                    transition: all 0.3s ease;
+                    padding: 10px 0;
+                    border: none;
+                    box-shadow: none;
                     display: inline-flex;
                     align-items: center;
-                    gap: 8px;
-                }
-
-                .btn-primary {
-                    background: var(--primary);
-                    color: white;
-                    border: 1px solid var(--primary);
+                    gap: 6px;
                 }
 
                 .btn-primary:hover {
-                    background: #1a85ff;
-                    transform: translateY(-2px);
-                    box-shadow: 0 10px 20px rgba(66, 133, 244, 0.3);
+                    background: transparent;
+                    transform: none;
+                    text-decoration: underline;
+                    box-shadow: none;
+                }
+                
+                .btn-primary::after {
+                    content: '›';
+                    font-size: 24px;
+                    line-height: 1;
+                    margin-top: -2px;
                 }
 
+                /* Frosted Glass Button */
                 .btn-secondary {
                     background: rgba(255, 255, 255, 0.1);
-                    color: white;
-                    backdrop-filter: blur(10px);
-                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    color: #f5f5f7;
+                    padding: 12px 24px;
+                    border-radius: 980px;
+                    font-size: 17px;
+                    font-weight: 500;
+                    backdrop-filter: blur(20px);
+                    -webkit-backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    transition: all 0.3s ease;
                 }
 
                 .btn-secondary:hover {
                     background: rgba(255, 255, 255, 0.2);
-                    transform: translateY(-2px);
+                    transform: scale(1.02);
                 }
 
                 @media (max-width: 768px) {
                     .hero-title {
-                        font-size: 2.5rem;
+                        font-size: 3rem;
                     }
                     .hero-desc {
-                        font-size: 1rem;
+                        font-size: 1.2rem;
                     }
                     .hero-buttons {
                         flex-direction: column;
-                        width: 100%;
+                        gap: 16px;
                     }
-                    .btn {
-                        width: 100%;
-                        justify-content: center;
+                    .btn-primary {
+                        font-size: 17px;
                     }
                 }
             `}</style>

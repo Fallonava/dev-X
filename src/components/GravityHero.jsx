@@ -103,14 +103,19 @@ export default function GravityHero() {
 
     return (
         <section ref={ref} className="hero-gravity" style={{ height: "100vh", position: "relative", overflow: "hidden" }}>
-            <div ref={sceneRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%" }} />
+            <div ref={sceneRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0 }} />
 
-            <div className="container" style={{ position: "relative", zIndex: 1, pointerEvents: "none" }}>
-                <h1 style={{ fontSize: "5rem", fontWeight: "800", lineHeight: "1", maxWidth: "800px" }}>
+            <div className="container" style={{ position: "relative", zIndex: 10, pointerEvents: "none", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+                <h1 style={{ fontSize: "clamp(3rem, 8vw, 6rem)", fontWeight: "800", lineHeight: "1.1", maxWidth: "900px", textShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
                     Defying <br />
-                    <span style={{ color: "var(--primary)" }}>Gravity</span>.
+                    <span style={{
+                        background: "linear-gradient(to right, var(--primary), var(--accent))",
+                        WebkitBackgroundClip: "text",
+                        WebkitTextFillColor: "transparent",
+                        backgroundClip: "text"
+                    }}>Gravity</span>.
                 </h1>
-                <p style={{ fontSize: "1.5rem", marginTop: "20px", color: "var(--text-secondary)", maxWidth: "500px" }}>
+                <p style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", marginTop: "30px", color: "var(--text)", maxWidth: "600px", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
                     Building digital experiences that float above the ordinary.
                 </p>
             </div>

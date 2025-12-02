@@ -8,6 +8,7 @@ import BentoGrid from "./components/BentoGrid";
 import Skills from "./components/Skills";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+import CursorParticles from "./components/CursorParticles";
 
 export default function App() {
   useEffect(() => {
@@ -34,6 +35,7 @@ export default function App() {
 
   return (
     <>
+      <CursorParticles />
       <Navbar />
       <GravityHero />
       <BentoGrid />

@@ -95,8 +95,9 @@ export default function GravityHero() {
                     align-items: center;
                     justify-content: center;
                     padding-top: 100px;
-                    background: #050505;
-                    color: #fff;
+                    background: var(--bg);
+                    color: var(--text);
+                    transition: background 0.3s ease, color 0.3s ease;
                 }
 
                 /* Background Effects */
@@ -117,8 +118,8 @@ export default function GravityHero() {
                     top: -50%;
                     left: -50%;
                     background-image: 
-                        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                        linear-gradient(var(--glass-border) 1px, transparent 1px),
+                        linear-gradient(90deg, var(--glass-border) 1px, transparent 1px);
                     background-size: 40px 40px;
                     transform: perspective(500px) rotateX(60deg);
                     animation: gridMove 20s linear infinite;
@@ -199,7 +200,7 @@ export default function GravityHero() {
                     letter-spacing: -0.04em;
                     line-height: 1;
                     margin-bottom: 24px;
-                    background: linear-gradient(180deg, #fff 0%, #9aa0a6 100%);
+                    background: linear-gradient(180deg, var(--text) 0%, var(--text-secondary) 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
                     opacity: 0;
@@ -217,7 +218,7 @@ export default function GravityHero() {
 
                 .hero-desc {
                     font-size: 1.5rem;
-                    color: #9aa0a6;
+                    color: var(--text-secondary);
                     max-width: 700px;
                     margin-bottom: 40px;
                     line-height: 1.5;
@@ -250,8 +251,8 @@ export default function GravityHero() {
                 }
 
                 .btn-primary {
-                    background: #fff;
-                    color: #000;
+                    background: var(--text);
+                    color: var(--bg);
                     padding: 14px 32px;
                     border-radius: 100px;
                     font-weight: 600;
@@ -265,7 +266,7 @@ export default function GravityHero() {
                 }
 
                 .btn-text {
-                    color: #8ab4f8;
+                    color: var(--primary);
                     font-weight: 500;
                     font-size: 16px;
                     text-decoration: none;

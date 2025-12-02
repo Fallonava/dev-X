@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 
-export default function Navbar() {
+export default function Navbar({ theme, toggleTheme }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navRef = useRef(null);
 

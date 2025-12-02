@@ -1,11 +1,57 @@
-import React from "react";
+import React, { useRef, useEffect } from "react";
+import gsap from "gsap";
 
-const BentoCard = ({ title, children, className = "" }) => (
-    <div className={`bento-card glass ${className}`}>
-        <h3>{title}</h3>
-        {children}
-    </div>
-);
+const BentoCard = ({ title, children, className = "" }) => {
+    const cardRef = useRef(null);
+
+    useEffect(() => {
+        const card = cardRef.current;
+
+        const handleMouseMove = (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+
+            const rotateX = ((y - centerY) / centerY) * -10; // Max rotation deg
+            const rotateY = ((x - centerX) / centerX) * 10;
+
+            gsap.to(card, {
+                rotateX: rotateX,
+                rotateY: rotateY,
+                duration: 0.4,
+                ease: "power2.out",
+                transformPerspective: 1000,
+            });
+        };
+
+        const handleMouseLeave = () => {
+            gsap.to(card, {
+                rotateX: 0,
+                rotateY: 0,
+                duration: 0.4,
+                ease: "power2.out",
+            });
+        };
+
+        card.addEventListener("mousemove", handleMouseMove);
+        card.addEventListener("mouseleave", handleMouseLeave);
+
+        return () => {
+            card.removeEventListener("mousemove", handleMouseMove);
+            card.removeEventListener("mouseleave", handleMouseLeave);
+        };
+    }, []);
+
+    return (
+        <div ref={cardRef} className={`bento-card glass ${className}`}>
+            <h3>{title}</h3>
+            {children}
+        </div>
+    );
+};
 
 export default function BentoGrid() {
     return (
@@ -65,26 +111,28 @@ export default function BentoGrid() {
           padding: 32px;
           border-radius: 32px;
           background: var(--card-bg);
-          transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          transition: transform 0.1s; /* Handled by GSAP */
           display: flex;
           flex-direction: column;
           justify-content: space-between;
           border: 1px solid var(--glass-border);
+          transform-style: preserve-3d; /* Important for 3D effect */
         }
         .bento-card:hover {
-          transform: translateY(-8px) scale(1.02);
           border-color: var(--primary);
-          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.3);
+          box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1);
         }
         .bento-card h3 {
           margin-top: 0;
           font-size: 1.5rem;
           margin-bottom: 15px;
           font-weight: 700;
+          transform: translateZ(20px); /* Pop out text */
         }
         .card-desc {
           color: var(--text-secondary);
           line-height: 1.5;
+          transform: translateZ(10px);
         }
         .tag {
           padding: 6px 14px;
@@ -101,6 +149,7 @@ export default function BentoGrid() {
           text-decoration: none;
           font-weight: 600;
           transition: color 0.2s;
+          transform: translateZ(15px);
         }
         .link:hover {
           color: var(--accent);
@@ -108,6 +157,7 @@ export default function BentoGrid() {
         .stat {
           text-align: center;
           padding: 20px 0;
+          transform: translateZ(20px);
         }
         .stat .number {
           display: block;

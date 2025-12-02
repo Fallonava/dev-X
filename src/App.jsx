@@ -5,10 +5,12 @@ import gsap from "gsap";
 import Navbar from "./components/Navbar";
 import GravityHero from "./components/GravityHero";
 import BentoGrid from "./components/BentoGrid";
+import Process from "./components/Process";
 import Skills from "./components/Skills";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import CursorParticles from "./components/CursorParticles";
+import MagneticCursor from "./components/MagneticCursor";
 
 export default function App() {
   useEffect(() => {
@@ -35,10 +37,12 @@ export default function App() {
 
   return (
     <>
+      <MagneticCursor />
       <CursorParticles />
       <Navbar />
       <GravityHero />
       <BentoGrid />
+      <Process />
       <Skills />
       <Contact />
       <Footer />

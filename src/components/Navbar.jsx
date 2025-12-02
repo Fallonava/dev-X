@@ -2,7 +2,8 @@ import React, { useEffect, useState } from "react";
 import gsap from "gsap";
 
 export default function Navbar() {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "dark");
+  // Default to 'light' if no preference is saved
+  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   useEffect(() => {
     document.documentElement.setAttribute("data-theme", theme);
@@ -15,11 +16,11 @@ export default function Navbar() {
 
   useEffect(() => {
     gsap.from(".navbar", {
-      y: -100,
+      y: -50,
       opacity: 0,
-      duration: 1,
-      ease: "power3.out",
-      delay: 0.5,
+      duration: 1.2,
+      ease: "power4.out",
+      delay: 0.2,
     });
   }, []);
 
@@ -44,13 +45,18 @@ export default function Navbar() {
           background: none;
           border: none;
           cursor: pointer;
-          font-size: 1.2rem;
-          padding: 5px;
+          font-size: 1rem;
+          padding: 6px;
           border-radius: 50%;
-          transition: background 0.2s;
+          transition: background 0.2s, transform 0.2s;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text);
         }
         .theme-toggle:hover {
-          background: var(--glass-bg);
+          background: var(--glass-border);
+          transform: rotate(15deg);
         }
       `}</style>
     </nav>

@@ -42,8 +42,8 @@ export default function GravityHero() {
                     </p>
 
                     <div className={`hero-buttons ${isLoaded ? 'visible' : ''}`}>
-                        <a href="#download" className="btn btn-primary">
-                            Download Antigravity
+                        <a href="#contact" className="btn btn-primary">
+                            Mulai Konsultasi
                         </a>
                         <a href="#docs" className="btn btn-text">
                             Read the docs ›

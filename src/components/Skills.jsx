@@ -1,116 +1,104 @@
-import React, { useEffect, useRef } from "react";
-import Matter from "matter-js";
-import useMeasure from "react-use-measure";
+import React, { useEffect } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+gsap.registerPlugin(ScrollTrigger);
+
+const skills = [
+    "JavaScript", "TypeScript", "React", "Next.js", "Node.js",
+    "Python", "n8n", "GSAP", "Three.js", "Tailwind CSS",
+    "Docker", "PostgreSQL", "MongoDB", "REST APIs", "GraphQL",
+    "Git", "Figma", "Web3", "AI/ML", "Cloud Deploy"
+];
 
 export default function Skills() {
-    const sceneRef = useRef(null);
-    const [ref, bounds] = useMeasure();
-
     useEffect(() => {
-        if (!bounds.width) return;
+        const skillTags = gsap.utils.toArray(".skill-tag");
 
-        const Engine = Matter.Engine,
-            Render = Matter.Render,
-            World = Matter.World,
-            Bodies = Matter.Bodies,
-            Mouse = Matter.Mouse,
-            MouseConstraint = Matter.MouseConstraint;
-
-        const engine = Engine.create();
-        const render = Render.create({
-            element: sceneRef.current,
-            engine: engine,
-            options: {
-                width: bounds.width,
-                height: 400,
-                wireframes: false,
-                background: "transparent",
+        gsap.from(skillTags, {
+            scrollTrigger: {
+                trigger: ".skills-grid",
+                start: "top 80%",
             },
+            opacity: 0,
+            y: 30,
+            stagger: 0.05,
+            duration: 0.6,
+            ease: "power3.out",
         });
-
-        // Boundaries
-        const ground = Bodies.rectangle(bounds.width / 2, 410, bounds.width, 20, { isStatic: true, render: { visible: false } });
-        const left = Bodies.rectangle(-10, 200, 20, 400, { isStatic: true, render: { visible: false } });
-        const right = Bodies.rectangle(bounds.width + 10, 200, 20, 400, { isStatic: true, render: { visible: false } });
-
-        // Skills
-        const skills = ["JavaScript", "React", "Node.js", "Python", "Docker", "AWS", "n8n", "GraphQL", "TypeScript", "SQL"];
-        const bodies = skills.map((skill, i) => {
-            const width = skill.length * 15 + 40;
-            return Bodies.rectangle(
-                Math.random() * bounds.width,
-                Math.random() * -200,
-                width,
-                50,
-                {
-                    chamfer: { radius: 25 },
-                    render: {
-                        fillStyle: "#1a1a1a",
-                        strokeStyle: "#333",
-                        lineWidth: 1,
-                        text: {
-                            content: skill,
-                            color: "#fff",
-                            size: 16,
-                            family: "Inter",
-                        },
-                    },
-                }
-            );
-        });
-
-        World.add(engine.world, [ground, left, right, ...bodies]);
-
-        // Mouse
-        const mouse = Mouse.create(render.canvas);
-        const mouseConstraint = MouseConstraint.create(engine, {
-            mouse: mouse,
-            constraint: { stiffness: 0.2, render: { visible: false } },
-        });
-        World.add(engine.world, mouseConstraint);
-        render.mouse = mouse;
-
-        // Custom renderer for text
-        const originalRender = Render.world;
-        Render.world = function (render) {
-            originalRender(render);
-            const ctx = render.context;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-
-            bodies.forEach((body, i) => {
-                const { x, y } = body.position;
-                const angle = body.angle;
-
-                ctx.save();
-                ctx.translate(x, y);
-                ctx.rotate(angle);
-                ctx.fillStyle = "#fff";
-                ctx.font = "16px Inter";
-                ctx.fillText(skills[i], 0, 0);
-                ctx.restore();
-            });
-        };
-
-        Engine.run(engine);
-        Render.run(render);
-
-        return () => {
-            Render.stop(render);
-            World.clear(engine.world);
-            Engine.clear(engine);
-            render.canvas.remove();
-            Render.world = originalRender; // Restore original renderer
-        };
-    }, [bounds]);
+    }, []);
 
     return (
-        <section id="skills" className="container" ref={ref}>
-            <h2 style={{ textAlign: "center" }}>Skills</h2>
-            <p style={{ textAlign: "center", color: "var(--text-secondary)", marginBottom: "20px" }}>
-                Drag and throw to explore.
-            </p>
-            <div ref={sceneRef} style={{ height: "400px", border: "1px solid var(--glass-border)", borderRadius: "20px", overflow: "hidden" }} />
+        <section id="skills" className="container">
+            <h2 style={{ textAlign: "center", marginBottom: "60px" }}>Skills & Technologies</h2>
+
+            <div className="skills-grid">
+                {skills.map((skill, index) => (
+                    <div key={index} className="skill-tag">
+                        {skill}
+                    </div>
+                ))}
+            </div>
+
+            <style>{`
+        .skills-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+          gap: 16px;
+          max-width: 900px;
+          margin: 0 auto;
+        }
+        
+        .skill-tag {
+          padding: 16px 24px;
+          background: var(--card-bg);
+          border: 1.5px solid var(--glass-border);
+          border-radius: 100px;
+          text-align: center;
+          font-weight: 500;
+          font-size: 0.95rem;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          cursor: default;
+          position: relative;
+          overflow: hidden;
+        }
+        
+        .skill-tag::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: linear-gradient(135deg, var(--primary), var(--accent));
+          opacity: 0;
+          transition: opacity 0.3s;
+          border-radius: 100px;
+          z-index: -1;
+        }
+        
+        .skill-tag:hover {
+          transform: translateY(-4px) scale(1.05);
+          border-color: var(--primary);
+          box-shadow: 0 8px 24px rgba(59, 130, 246, 0.2);
+          color: var(--bg);
+        }
+        
+        .skill-tag:hover::before {
+          opacity: 1;
+        }
+        
+        @media (max-width: 768px) {
+          .skills-grid {
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+          }
+          .skill-tag {
+            padding: 12px 18px;
+            font-size: 0.85rem;
+          }
+        }
+      `}</style>
         </section>
     );
 }

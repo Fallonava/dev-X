@@ -19,70 +19,55 @@ export default function CursorParticles() {
 
         const mouse = { x: null, y: null };
 
-        window.addEventListener("mousemove", (e) => {
-            mouse.x = e.x;
-            mouse.y = e.y;
-        });
-
         class Particle {
-            constructor() {
-                this.x = Math.random() * canvas.width;
-                this.y = Math.random() * canvas.height;
-                this.size = Math.random() * 2;
-                this.baseX = this.x;
-                this.baseY = this.y;
-                this.density = Math.random() * 30 + 1;
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 3 + 1;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 3 - 1.5;
+                this.life = 1; // Opacity from 1 to 0
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.life -= 0.01; // Fade out
             }
 
             draw() {
-                ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--text-secondary') || "#a1a1aa";
+                ctx.fillStyle = `rgba(59, 130, 246, ${this.life})`; // Use primary color
                 ctx.beginPath();
                 ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
                 ctx.closePath();
                 ctx.fill();
             }
-
-            update() {
-                let dx = mouse.x - this.x;
-                let dy = mouse.y - this.y;
-                let distance = Math.sqrt(dx * dx + dy * dy);
-                let forceDirectionX = dx / distance;
-                let forceDirectionY = dy / distance;
-                let maxDistance = 100;
-                let force = (maxDistance - distance) / maxDistance;
-                let directionX = forceDirectionX * force * this.density;
-                let directionY = forceDirectionY * force * this.density;
-
-                if (distance < maxDistance) {
-                    this.x -= directionX;
-                    this.y -= directionY;
-                } else {
-                    if (this.x !== this.baseX) {
-                        let dx = this.x - this.baseX;
-                        this.x -= dx / 10;
-                    }
-                    if (this.y !== this.baseY) {
-                        let dy = this.y - this.baseY;
-                        this.y -= dy / 10;
-                    }
-                }
-            }
         }
 
-        const init = () => {
-            particles = [];
-            for (let i = 0; i < 100; i++) {
-                particles.push(new Particle());
+        window.addEventListener("mousemove", (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+
+            // Create trailing particles
+            for (let i = 0; i < 3; i++) {
+                particles.push(new Particle(mouse.x, mouse.y));
             }
-        };
-        init();
+        });
 
         const animate = () => {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].draw();
+
+            // Update and draw particles
+            for (let i = particles.length - 1; i >= 0; i--) {
                 particles[i].update();
+                particles[i].draw();
+
+                // Remove dead particles
+                if (particles[i].life <= 0) {
+                    particles.splice(i, 1);
+                }
             }
+
             animationFrameId = requestAnimationFrame(animate);
         };
         animate();
@@ -103,8 +88,8 @@ export default function CursorParticles() {
                 width: "100%",
                 height: "100%",
                 pointerEvents: "none",
-                zIndex: 0,
-                opacity: 0.3,
+                zIndex: 1,
+                opacity: 0.6,
             }}
         />
     );

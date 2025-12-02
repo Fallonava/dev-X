@@ -1,146 +1,290 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import gsap from "gsap";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navRef = useRef(null);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   useEffect(() => {
+    // Initial entry animation
     gsap.fromTo(
       ".navbar",
       { y: -100, opacity: 0 },
-      { y: 20, opacity: 1, duration: 1.2, ease: "power3.out", delay: 0.2 }
+      { y: 0, opacity: 1, duration: 1.2, ease: "power3.out", delay: 0.2 }
     );
   }, []);
 
+  useEffect(() => {
+    if (isMenuOpen) {
+      // Staggered animation for mobile menu links
+      gsap.fromTo(
+        ".mobile-nav-link",
+        { y: -20, opacity: 0 },
+        { y: 0, opacity: 1, stagger: 0.1, duration: 0.4, ease: "power2.out", delay: 0.2 }
+      );
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "auto";
+    }
+  }, [isMenuOpen]);
+
   return (
-    <nav className="navbar">
-      <div className="logo">Faishal</div>
+    <>
+      <nav className="navbar" ref={navRef}>
+        <div className="nav-content">
+          {/* Logo */}
+          <div className="logo">
+            <a href="#">Faishal</a>
+          </div>
 
-      {/* Mobile Menu Toggle */}
-      <button
-        className="menu-toggle"
-        onClick={toggleMenu}
-        aria-label="Toggle Menu"
-        aria-expanded={isMenuOpen}
-      >
-        <span className={isMenuOpen ? "open" : ""}></span>
-        <span className={isMenuOpen ? "open" : ""}></span>
-        <span className={isMenuOpen ? "open" : ""}></span>
-      </button>
+          {/* Desktop Menu */}
+          <ul className="desktop-menu">
+            <li><a href="#about">About</a></li>
+            <li><a href="#skills">Skills</a></li>
+            <li><a href="#portfolio">Portfolio</a></li>
+            <li><a href="#services">Services</a></li>
+            <li><a href="#testimonials">Testimonials</a></li>
+            <li><a href="#contact">Contact</a></li>
+          </ul>
 
-      {/* Navigation Menu */}
-      <ul className={`nav-menu ${isMenuOpen ? "active" : ""}`}>
-        <li><a href="#about" onClick={() => setIsMenuOpen(false)}>About</a></li>
-        <li><a href="#skills" onClick={() => setIsMenuOpen(false)}>Skills</a></li>
-        <li><a href="#portfolio" onClick={() => setIsMenuOpen(false)}>Portfolio</a></li>
-        <li><a href="#services" onClick={() => setIsMenuOpen(false)}>Services</a></li>
-        <li><a href="#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
-        <li>
-          <a href="#contact" className="nav-download-btn" onClick={() => setIsMenuOpen(false)}>
-            Contact Me
-          </a>
-        </li>
-      </ul>
+          {/* Right Icons (Placeholder for Search/Bag if needed, currently just empty or Contact btn for desktop) */}
+          <div className="nav-right">
+            {/* Using a simple search icon placeholder as requested by Apple style prompt */}
+            <button className="icon-btn" aria-label="Search">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="11" cy="11" r="8"></circle>
+                <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+              </svg>
+            </button>
+          </div>
+
+          {/* Mobile Menu Toggle (Hamburger) */}
+          <button
+            className={`menu-toggle ${isMenuOpen ? "is-active" : ""}`}
+            onClick={toggleMenu}
+            aria-label="Toggle Menu"
+            aria-expanded={isMenuOpen}
+          >
+            <span className="line line-top"></span>
+            <span className="line line-bottom"></span>
+          </button>
+        </div>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      <div className={`mobile-menu ${isMenuOpen ? "open" : ""}`}>
+        <div className="mobile-menu-content">
+          <ul className="mobile-nav-list">
+            <li><a href="#about" className="mobile-nav-link" onClick={toggleMenu}>About</a></li>
+            <li><a href="#skills" className="mobile-nav-link" onClick={toggleMenu}>Skills</a></li>
+            <li><a href="#portfolio" className="mobile-nav-link" onClick={toggleMenu}>Portfolio</a></li>
+            <li><a href="#services" className="mobile-nav-link" onClick={toggleMenu}>Services</a></li>
+            <li><a href="#testimonials" className="mobile-nav-link" onClick={toggleMenu}>Testimonials</a></li>
+            <li><a href="#contact" className="mobile-nav-link" onClick={toggleMenu}>Contact</a></li>
+          </ul>
+        </div>
+      </div>
 
       <style>{`
+        /* Navbar Container */
+        .navbar {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 48px; /* Apple standard is often 44px or 48px */
+          background: rgba(0, 0, 0, 0.8);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          z-index: 1000;
+          transition: background 0.3s ease;
+          display: flex;
+          justify-content: center;
+          border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .nav-content {
+          max-width: 1000px;
+          width: 100%;
+          padding: 0 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          height: 100%;
+        }
+
+        /* Logo */
+        .logo a {
+          color: #f5f5f7;
+          text-decoration: none;
+          font-weight: 600;
+          font-size: 1.1rem;
+          letter-spacing: -0.02em;
+        }
+
+        /* Desktop Menu */
+        .desktop-menu {
+          display: flex;
+          gap: 32px;
+          list-style: none;
+          margin: 0;
+          padding: 0;
+          align-items: center;
+        }
+
+        .desktop-menu a {
+          color: #f5f5f7;
+          text-decoration: none;
+          font-size: 12px;
+          font-weight: 400;
+          opacity: 0.8;
+          transition: all 0.3s ease;
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        /* Hover State: Focus Effect */
+        .desktop-menu:hover a {
+          opacity: 0.5; /* Dim others */
+        }
+
+        .desktop-menu a:hover {
+          opacity: 1; /* Highlight hovered */
+          color: #fff;
+        }
+
+        /* Right Icons */
+        .nav-right {
+            display: flex;
+            align-items: center;
+        }
+        
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #f5f5f7;
+            opacity: 0.8;
+            cursor: pointer;
+            padding: 8px;
+            transition: opacity 0.3s;
+        }
+        
+        .icon-btn:hover {
+            opacity: 1;
+        }
+
+        /* Hamburger Menu (Apple Style) */
         .menu-toggle {
           display: none;
           flex-direction: column;
-          gap: 5px;
+          justify-content: center;
+          gap: 6px; /* Initial gap */
           background: none;
           border: none;
           cursor: pointer;
-          padding: 8px;
-          z-index: 1001;
+          padding: 0;
+          width: 24px;
+          height: 24px;
+          z-index: 1002;
+          position: relative;
         }
 
-        .menu-toggle span {
+        .menu-toggle .line {
           display: block;
-          width: 22px;
-          height: 2px;
-          background: var(--text);
-          border-radius: 2px;
+          width: 18px;
+          height: 1.5px; /* Thinner lines */
+          background: #f5f5f7;
+          border-radius: 1px;
           transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
+          position: absolute;
+          left: 3px; /* Center horizontally */
         }
 
-        .menu-toggle span.open:nth-child(1) {
-          transform: rotate(45deg) translate(5px, 5px);
+        .menu-toggle .line-top {
+            top: 9px; /* Initial position */
+        }
+        
+        .menu-toggle .line-bottom {
+            bottom: 9px; /* Initial position */
         }
 
-        .menu-toggle span.open:nth-child(2) {
-          opacity: 0;
+        /* Active State (X) */
+        .menu-toggle.is-active .line-top {
+          top: 11px;
+          transform: rotate(45deg);
         }
 
-        .menu-toggle span.open:nth-child(3) {
-          transform: rotate(-45deg) translate(5px, -5px);
+        .menu-toggle.is-active .line-bottom {
+          bottom: 11px;
+          transform: rotate(-45deg);
         }
 
+        /* Mobile Menu Overlay */
+        .mobile-menu {
+          position: fixed;
+          top: 48px; /* Below navbar */
+          left: 0;
+          width: 100%;
+          height: 0;
+          background: rgba(0, 0, 0, 0.95);
+          backdrop-filter: saturate(180%) blur(20px);
+          -webkit-backdrop-filter: saturate(180%) blur(20px);
+          overflow: hidden;
+          transition: height 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+          z-index: 999;
+        }
+
+        .mobile-menu.open {
+          height: calc(100vh - 48px);
+        }
+        
+        .mobile-menu-content {
+            padding: 40px 24px;
+        }
+
+        .mobile-nav-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .mobile-nav-link {
+            display: block;
+            color: #f5f5f7;
+            text-decoration: none;
+            font-size: 24px; /* Larger for mobile */
+            font-weight: 600;
+            padding: 16px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            opacity: 0; /* Hidden initially for animation */
+        }
+
+        /* Responsive */
         @media (max-width: 768px) {
+          .desktop-menu {
+            display: none;
+          }
+
           .menu-toggle {
             display: flex;
           }
-
-          .nav-menu {
-            position: fixed;
-            top: 0;
-            right: -100%;
-            height: 100vh;
-            width: 100%;
-            max-width: 320px;
-            background: rgba(28, 28, 30, 0.95);
-            backdrop-filter: blur(40px);
-            -webkit-backdrop-filter: blur(40px);
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 40px;
-            gap: 24px;
-            transition: right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
-            border-left: 1px solid var(--glass-border);
-            box-shadow: -20px 0 40px rgba(0, 0, 0, 0.5);
-            z-index: 999;
-          }
-
-          .nav-menu.active {
-            right: 0;
-          }
-
-          .nav-menu li {
-            width: 100%;
-            text-align: center;
-          }
-
-          .nav-menu a {
-            font-size: 1.5rem;
-            display: block;
-            padding: 16px 0;
-            color: var(--text);
-            font-weight: 600;
+          
+          .nav-right {
+             display: none; /* Hide search on mobile header to save space or move to menu */
           }
           
-          .nav-menu a:hover {
-            color: var(--primary);
-            background: transparent;
-          }
-
-          .nav-download-btn {
-            width: 100%;
-            justify-content: center;
-            margin-top: 20px;
-            background: var(--primary);
-            color: white;
-            padding: 16px;
+          .navbar {
+             justify-content: space-between; /* Spread logo and hamburger */
           }
           
-          .nav-download-btn:hover {
-            background: #1a85ff;
+          .nav-content {
+             padding: 0 20px;
           }
         }
       `}</style>
-    </nav>
+    </>
   );
 }

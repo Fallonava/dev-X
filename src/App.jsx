@@ -1,5 +1,7 @@
 import React, { useEffect } from "react";
 import Lenis from "lenis";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
 import Navbar from "./components/Navbar";
 import GravityHero from "./components/GravityHero";
@@ -10,6 +12,8 @@ import Services from "./components/Services";
 import Testimonials from "./components/Testimonials";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function App() {
   useEffect(() => {
@@ -31,7 +35,36 @@ export default function App() {
     }
     requestAnimationFrame(raf);
 
-    return () => lenis.destroy();
+    // Typography Blur Reveal Animation
+    const textElements = document.querySelectorAll(".animate-text");
+
+    textElements.forEach((element) => {
+      gsap.fromTo(
+        element,
+        {
+          opacity: 0,
+          y: 50,
+          filter: "blur(15px)",
+        },
+        {
+          opacity: 1,
+          y: 0,
+          filter: "blur(0px)",
+          duration: 1.2,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: element,
+            start: "top 80%",
+            toggleActions: "play none none reverse",
+          },
+        }
+      );
+    });
+
+    return () => {
+      lenis.destroy();
+      ScrollTrigger.getAll().forEach(t => t.kill());
+    };
   }, []);
 
   // Feature cards data

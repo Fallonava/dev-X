@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import Matter from "matter-js";
-import gsap from "gsap";
 
 export default function GravityHero() {
     const sceneRef = useRef(null);
@@ -8,6 +7,7 @@ export default function GravityHero() {
     const renderRef = useRef(null);
     const runnerRef = useRef(null);
     const [isMobile, setIsMobile] = useState(false);
+    const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
         const handleResize = () => {
@@ -15,16 +15,14 @@ export default function GravityHero() {
         };
         handleResize();
         window.addEventListener("resize", handleResize);
+
+        // Trigger entry animation
+        setTimeout(() => setIsLoaded(true), 100);
+
         return () => window.removeEventListener("resize", handleResize);
     }, []);
 
     useEffect(() => {
-        // GSAP Animations for text
-        const tl = gsap.timeline({ defaults: { ease: "power4.out", duration: 1 } });
-        tl.fromTo(".hero-content h1", { y: 50, opacity: 0 }, { y: 0, opacity: 1, delay: 0.2 })
-            .fromTo(".hero-content p", { y: 30, opacity: 0 }, { y: 0, opacity: 1 }, "-=0.6")
-            .fromTo(".hero-buttons", { y: 20, opacity: 0 }, { y: 0, opacity: 1 }, "-=0.6");
-
         // Matter.js Setup
         const Engine = Matter.Engine,
             Render = Matter.Render,
@@ -32,8 +30,7 @@ export default function GravityHero() {
             Bodies = Matter.Bodies,
             Mouse = Matter.Mouse,
             MouseConstraint = Matter.MouseConstraint,
-            Runner = Matter.Runner,
-            Composite = Matter.Composite;
+            Runner = Matter.Runner;
 
         const engine = Engine.create();
         const world = engine.world;
@@ -161,12 +158,7 @@ export default function GravityHero() {
             Matter.Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight + 50 });
             Matter.Body.setPosition(rightWall, { x: window.innerWidth + 50, y: window.innerHeight / 2 });
 
-            // Re-scale ground width
-            // Note: Matter.js bodies don't easily resize, simpler to remove and recreate walls or just update position for simple cases
-            // For robust resizing, we'd recreate walls. For now, position update is okay for height, but width needs scaling.
-            // Let's just recreate walls for simplicity in a real app, but here we'll leave it for now or do a quick fix:
-            Matter.Body.setVertices(ground, Matter.Bodies.rectangle(window.innerWidth / 2, window.innerHeight + 50, window.innerWidth, 100).vertices);
-            Matter.Body.setVertices(rightWall, Matter.Bodies.rectangle(window.innerWidth + 50, window.innerHeight / 2, 100, window.innerHeight).vertices);
+            // Note: Ideally recreate walls for width changes, but skipping for brevity
         };
 
         window.addEventListener("resize", handleResizeRender);
@@ -187,12 +179,26 @@ export default function GravityHero() {
 
             <div className="container hero-content-wrapper">
                 <div className="hero-content">
-                    <h1>Membangun Automasi, Website, & Solusi AI yang Mempercepat Bisnis Anda</h1>
-                    <p>
+                    <h1 className={`hero-title ${isLoaded ? 'visible' : ''}`}>
+                        Membangun Automasi, Website, & Solusi AI yang Mempercepat Bisnis Anda
+                    </h1>
+
+                    {/* Hero Image Placeholder */}
+                    <div className={`hero-image-container ${isLoaded ? 'visible' : ''}`}>
+                        <div className="hero-image-placeholder">
+                            <div className="placeholder-screen">
+                                <div className="placeholder-content">
+                                    <span>Product / Dashboard UI</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p className={`hero-desc ${isLoaded ? 'visible' : ''}`}>
                         Saya Faishal — Automation Engineer & Web Developer yang membantu bisnis meningkatkan efisiensi
                         melalui workflow cerdas berbasis n8n, API integration, website modern, dan teknologi AI terbaru.
                     </p>
-                    <div className="hero-buttons">
+                    <div className={`hero-buttons ${isLoaded ? 'visible' : ''}`}>
                         <a href="#contact" className="btn btn-primary">
                             Mulai dari Konsultasi Gratis
                         </a>
@@ -207,11 +213,12 @@ export default function GravityHero() {
                 .gravity-hero {
                     position: relative;
                     width: 100%;
-                    height: 100vh;
+                    min-height: 100vh;
                     overflow: hidden;
                     display: flex;
                     align-items: center;
                     justify-content: center;
+                    padding-top: 80px;
                 }
 
                 .matter-scene {
@@ -221,42 +228,132 @@ export default function GravityHero() {
                     width: 100%;
                     height: 100%;
                     z-index: 1;
-                    pointer-events: auto; /* Allow interaction with canvas */
+                    pointer-events: auto;
                 }
 
                 .hero-content-wrapper {
                     position: relative;
                     z-index: 2;
-                    pointer-events: none; /* Let clicks pass through to canvas where no content */
+                    pointer-events: none;
+                    width: 100%;
                 }
 
                 .hero-content {
-                    max-width: 800px;
+                    max-width: 900px;
                     text-align: center;
                     margin: 0 auto;
-                    pointer-events: auto; /* Re-enable clicks for text/buttons */
+                    pointer-events: auto;
+                    display: flex;
+                    flex-direction: column;
+                    align-items: center;
                 }
 
-                .hero-content h1 {
+                /* Hero Title Animation */
+                .hero-title {
                     font-size: 3.5rem;
-                    line-height: 1.2;
-                    margin-bottom: 24px;
-                    background: linear-gradient(to right, #fff, #ccc);
+                    line-height: 1.1;
+                    margin-bottom: 32px;
+                    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
+                    
+                    /* Initial State */
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: opacity 1s cubic-bezier(0.2, 0.8, 0.2, 1), transform 1s cubic-bezier(0.2, 0.8, 0.2, 1);
                 }
 
-                .hero-content p {
+                .hero-title.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* Hero Image Animation */
+                .hero-image-container {
+                    margin: 0 auto 40px;
+                    width: 100%;
+                    max-width: 600px;
+                    
+                    /* Initial State */
+                    opacity: 0;
+                    transform: scale(0.95);
+                    filter: blur(5px);
+                    transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.3s; /* 0.3s after title */
+                }
+
+                .hero-image-container.visible {
+                    opacity: 1;
+                    transform: scale(1);
+                    filter: blur(0);
+                }
+
+                .hero-image-placeholder {
+                    width: 100%;
+                    aspect-ratio: 16/9;
+                    background: rgba(255, 255, 255, 0.05);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 24px;
+                    backdrop-filter: blur(10px);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+                }
+                
+                .placeholder-screen {
+                    width: 90%;
+                    height: 85%;
+                    background: rgba(0,0,0,0.3);
+                    border-radius: 16px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    border: 1px solid rgba(255,255,255,0.05);
+                }
+                
+                .placeholder-content span {
+                    color: rgba(255,255,255,0.3);
+                    font-weight: 500;
+                    font-size: 1.2rem;
+                }
+
+                /* Description Animation */
+                .hero-desc {
                     font-size: 1.25rem;
                     color: var(--text-secondary);
                     margin-bottom: 40px;
                     line-height: 1.6;
+                    max-width: 700px;
+                    
+                    /* Initial State */
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.5s;
                 }
 
+                .hero-desc.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* Buttons Animation */
                 .hero-buttons {
                     display: flex;
                     gap: 16px;
                     justify-content: center;
+                    
+                    /* Initial State */
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.6s;
+                }
+
+                .hero-buttons.visible {
+                    opacity: 1;
+                    transform: translateY(0);
                 }
 
                 .btn {
@@ -277,7 +374,7 @@ export default function GravityHero() {
                 }
 
                 .btn-primary:hover {
-                    background: var(--primary-dark);
+                    background: #1a85ff;
                     transform: translateY(-2px);
                     box-shadow: 0 10px 20px rgba(66, 133, 244, 0.3);
                 }
@@ -295,14 +392,15 @@ export default function GravityHero() {
                 }
 
                 @media (max-width: 768px) {
-                    .hero-content h1 {
+                    .hero-title {
                         font-size: 2.5rem;
                     }
-                    .hero-content p {
+                    .hero-desc {
                         font-size: 1rem;
                     }
                     .hero-buttons {
                         flex-direction: column;
+                        width: 100%;
                     }
                     .btn {
                         width: 100%;

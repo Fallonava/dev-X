@@ -2,33 +2,22 @@ import React, { useEffect, useState } from "react";
 import gsap from "gsap";
 
 export default function Navbar() {
-  const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-  useEffect(() => {
-    document.documentElement.setAttribute("data-theme", theme);
-    localStorage.setItem("theme", theme);
-  }, [theme]);
-
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
-  };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   useEffect(() => {
-    // Fixed animation to ensure navbar appears
     gsap.fromTo(
       ".navbar",
       { y: -50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1.2, ease: "power4.out", delay: 0.2 }
+      { y: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.3 }
     );
   }, []);
 
   return (
-    <nav className="navbar glass">
+    <nav className="navbar">
       <div className="logo">Antigravity</div>
 
       {/* Mobile Menu Toggle */}
@@ -45,37 +34,22 @@ export default function Navbar() {
 
       {/* Navigation Menu */}
       <ul className={`nav-menu ${isMenuOpen ? "active" : ""}`}>
-        <li><a href="#about" onClick={() => setIsMenuOpen(false)}>About</a></li>
-        <li><a href="#projects" onClick={() => setIsMenuOpen(false)}>Work</a></li>
-        <li><a href="#skills" onClick={() => setIsMenuOpen(false)}>Skills</a></li>
-        <li><a href="#contact" onClick={() => setIsMenuOpen(false)}>Contact</a></li>
+        <li><a href="#product" onClick={() => setIsMenuOpen(false)}>Product</a></li>
+        <li><a href="#use-cases" onClick={() => setIsMenuOpen(false)}>Use Cases</a></li>
+        <li><a href="#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a></li>
+        <li><a href="#blog" onClick={() => setIsMenuOpen(false)}>Blog</a></li>
+        <li><a href="#resources" onClick={() => setIsMenuOpen(false)}>Resources</a></li>
         <li>
-          <button onClick={toggleTheme} className="theme-toggle" aria-label="Toggle Theme">
-            {theme === "dark" ? "☀️" : "🌙"}
+          <button className="nav-download-btn">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+            </svg>
+            Download
           </button>
         </li>
       </ul>
 
       <style>{`
-        .theme-toggle {
-          background: none;
-          border: none;
-          cursor: pointer;
-          font-size: 1rem;
-          padding: 6px;
-          border-radius: 50%;
-          transition: background 0.2s, transform 0.2s;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text);
-        }
-        .theme-toggle:hover {
-          background: var(--glass-border);
-          transform: rotate(15deg);
-        }
-
-        /* Mobile Menu Toggle Button */
         .menu-toggle {
           display: none;
           flex-direction: column;
@@ -108,7 +82,6 @@ export default function Navbar() {
           transform: rotate(-45deg) translate(7px, -7px);
         }
 
-        /* Mobile Responsive Styles */
         @media (max-width: 768px) {
           .menu-toggle {
             display: flex;
@@ -119,8 +92,8 @@ export default function Navbar() {
             top: 0;
             right: -100%;
             height: 100vh;
-            width: 250px;
-            background: var(--glass-bg);
+            width: 280px;
+            background: rgba(10, 14, 39, 0.95);
             backdrop-filter: blur(20px);
             flex-direction: column;
             justify-content: center;
@@ -129,7 +102,7 @@ export default function Navbar() {
             gap: 32px;
             transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             border-left: 1px solid var(--glass-border);
-            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.1);
+            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
           }
 
           .nav-menu.active {
@@ -141,21 +114,14 @@ export default function Navbar() {
           }
 
           .nav-menu a {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             display: block;
-            padding: 8px 0;
-          }
-        }
-
-        @media (max-width: 480px) {
-          .navbar {
-            padding: 10px 20px !important;
-            top: 20px;
-            min-width: calc(100vw - 40px);
+            padding: 12px 0;
           }
 
-          .navbar:hover {
-            padding: 10px 20px !important;
+          .nav-download-btn {
+            width: 100%;
+            justify-content: center;
           }
         }
       `}</style>

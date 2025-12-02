@@ -1,123 +1,43 @@
-import React, { useEffect, useRef } from "react";
-import Matter from "matter-js";
-import useMeasure from "react-use-measure";
+import React, { useEffect } from "react";
+import gsap from "gsap";
 
 export default function GravityHero() {
-    const sceneRef = useRef(null);
-    const [ref, bounds] = useMeasure();
-
     useEffect(() => {
-        if (!bounds.width) return;
-
-        const Engine = Matter.Engine,
-            Render = Matter.Render,
-            World = Matter.World,
-            Bodies = Matter.Bodies,
-            Mouse = Matter.Mouse,
-            MouseConstraint = Matter.MouseConstraint;
-
-        const engine = Engine.create();
-        const render = Render.create({
-            element: sceneRef.current,
-            engine: engine,
-            options: {
-                width: bounds.width,
-                height: bounds.height,
-                wireframes: false,
-                background: "transparent",
-            },
-        });
-
-        // Create boundaries
-        const ground = Bodies.rectangle(
-            bounds.width / 2,
-            bounds.height + 50,
-            bounds.width,
-            100,
-            { isStatic: true, render: { visible: false } }
-        );
-        const leftWall = Bodies.rectangle(
-            -50,
-            bounds.height / 2,
-            100,
-            bounds.height,
-            { isStatic: true, render: { visible: false } }
-        );
-        const rightWall = Bodies.rectangle(
-            bounds.width + 50,
-            bounds.height / 2,
-            100,
-            bounds.height,
-            { isStatic: true, render: { visible: false } }
+        gsap.fromTo(
+            ".hero h1",
+            { y: 50, opacity: 0 },
+            { y: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.5 }
         );
 
-        // Create falling objects (skills/keywords)
-        const keywords = ["React", "Node.js", "n8n", "Design", "AI", "Web3"];
-        const bodies = keywords.map((word) => {
-            const x = Math.random() * bounds.width;
-            const y = Math.random() * -500; // Start above screen
-            const size = 60 + Math.random() * 40;
-
-            return Bodies.circle(x, y, size / 2, {
-                restitution: 0.9, // Bouncy
-                friction: 0.005,
-                render: {
-                    fillStyle: ["#3b82f6", "#8b5cf6", "#ffffff"][Math.floor(Math.random() * 3)],
-                },
-                label: word, // Custom label property
-            });
-        });
-
-        World.add(engine.world, [ground, leftWall, rightWall, ...bodies]);
-
-        // Add mouse control
-        const mouse = Mouse.create(render.canvas);
-        const mouseConstraint = MouseConstraint.create(engine, {
-            mouse: mouse,
-            constraint: {
-                stiffness: 0.2,
-                render: {
-                    visible: false,
-                },
-            },
-        });
-        World.add(engine.world, mouseConstraint);
-
-        // Keep the mouse in sync with rendering
-        render.mouse = mouse;
-
-        // Run the engine
-        Engine.run(engine);
-        Render.run(render);
-
-        return () => {
-            Render.stop(render);
-            World.clear(engine.world);
-            Engine.clear(engine);
-            render.canvas.remove();
-            render.canvas = null;
-            render.context = null;
-            render.textures = {};
-        };
-    }, [bounds]);
+        gsap.fromTo(
+            ".hero-buttons",
+            { y: 30, opacity: 0 },
+            { y: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.8 }
+        );
+    }, []);
 
     return (
-        <section ref={ref} className="hero-gravity" style={{ height: "100vh", position: "relative", overflow: "hidden" }}>
-            <div ref={sceneRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", zIndex: 0 }} />
-
-            <div className="container" style={{ position: "relative", zIndex: 10, pointerEvents: "none", height: "100%", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                <h1 style={{ fontSize: "clamp(3rem, 8vw, 6rem)", fontWeight: "800", lineHeight: "1.1", maxWidth: "900px", textShadow: "0 10px 30px rgba(0,0,0,0.5)" }}>
-                    Defying <br />
-                    <span style={{
-                        background: "linear-gradient(to right, var(--primary), var(--accent))",
-                        WebkitBackgroundClip: "text",
-                        WebkitTextFillColor: "transparent",
-                        backgroundClip: "text"
-                    }}>Gravity</span>.
-                </h1>
-                <p style={{ fontSize: "clamp(1rem, 2vw, 1.5rem)", marginTop: "30px", color: "var(--text)", maxWidth: "600px", textShadow: "0 2px 10px rgba(0,0,0,0.5)" }}>
-                    Building digital experiences that float above the ordinary.
-                </p>
+        <section className="hero">
+            <div className="container">
+                <h1>Experience liftoff with the next-generation IDE</h1>
+                <div className="hero-buttons">
+                    <button className="btn btn-primary">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="3" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="3" width="7" height="7"></rect>
+                            <rect x="14" y="14" width="7" height="7"></rect>
+                            <rect x="3" y="14" width="7" height="7"></rect>
+                        </svg>
+                        Download for Windows
+                    </button>
+                    <button className="btn btn-secondary">
+                        Explore use cases
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </div>
             </div>
         </section>
     );

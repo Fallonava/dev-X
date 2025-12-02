@@ -34,11 +34,11 @@ export default function GravityHero() {
                     </div>
 
                     <h1 className={`hero-title ${isLoaded ? 'visible' : ''}`}>
-                        Build the new way
+                        Do less. Achieve more.
                     </h1>
 
                     <p className={`hero-desc ${isLoaded ? 'visible' : ''}`}>
-                        The first agentic IDE. Plan, execute, and verify complex software with AI agents that understand your codebase.
+                        Systems designed to run themselves.Your business logic. Now on autopilot.Automation and development, perfectly synced.
                     </p>
 
                     <div className={`hero-buttons ${isLoaded ? 'visible' : ''}`}>

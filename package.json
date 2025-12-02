@@ -1,23 +1,21 @@
 {
-  "name": "portfolio-ultimate",
+  "name": "react-portfolio-latest",
   "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "svelte-kit dev",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "svelte-kit preview"
-  },
-  "engines": {
-    "node": ">=18"
+    "preview": "vite preview"
   },
   "dependencies": {
-    "svelte": "^4.2.20",
-    "@sveltejs/kit": "^1.25.0",
-    "gsap": "^3.12.0"
+    "gsap": "^3.12.5",
+    "@studio-freight/lenis": "^1.0.30",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "svelte-preprocess": "^6.0.0",
-    "@sveltejs/adapter-static": "^2.0.0"
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^6.0.2"
   }
 }

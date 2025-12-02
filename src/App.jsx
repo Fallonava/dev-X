@@ -1,21 +1,26 @@
 import React, { useEffect } from "react";
-import Lenis from "@studio-freight/lenis";
+import Lenis from "lenis";
 import gsap from "gsap";
 
-import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
-import Footer from "./components/Footer";
-
+import GravityHero from "./components/GravityHero";
+import BentoGrid from "./components/BentoGrid";
+import Skills from "./components/Skills";
 import Contact from "./components/Contact";
+import Footer from "./components/Footer";
 
 export default function App() {
   useEffect(() => {
     // Smooth scroll
     const lenis = new Lenis({
-      lerp: 0.08,
-      wheelMultiplier: 1.2,
-      smoothWheel: true,
-      smoothTouch: true
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
     });
 
     function raf(time) {
@@ -24,22 +29,15 @@ export default function App() {
     }
     requestAnimationFrame(raf);
 
-    // GSAP fade-in
-    gsap.from(".fade", {
-      opacity: 0,
-      y: 40,
-      duration: 1,
-      stagger: 0.2,
-      ease: "power3.out",
-    });
-
     return () => lenis.destroy();
   }, []);
 
   return (
     <>
       <Navbar />
-      <Hero />
+      <GravityHero />
+      <BentoGrid />
+      <Skills />
       <Contact />
       <Footer />
     </>

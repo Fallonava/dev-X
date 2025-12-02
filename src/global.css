@@ -1,34 +1,91 @@
 :root {
-  --bg: #0d0d0d;
-  --text: #eaeaea;
-  --primary: #5c5cff;
-  --input-bg: #1a1a1a;
-  --border: #333;
+  /* Colors - Premium Dark Mode */
+  --bg: #050505;
+  --text: #ffffff;
+  --text-secondary: #a1a1aa;
+  --primary: #3b82f6;
+  /* Blue */
+  --accent: #8b5cf6;
+  /* Purple */
+  --glass-bg: rgba(255, 255, 255, 0.05);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --card-bg: #0a0a0a;
+
+  /* Typography */
+  --font-main: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+html.lenis {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
 }
 
 body {
   margin: 0;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-main);
   background: var(--bg);
   color: var(--text);
   overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Utilities */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 /* NAVBAR */
 .navbar {
   display: flex;
   justify-content: space-between;
-  padding: 20px 50px;
+  align-items: center;
+  padding: 15px 30px;
   position: fixed;
-  top: 0;
-  width: 100%;
-  backdrop-filter: blur(10px);
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 1000px;
+  border-radius: 100px;
   z-index: 1000;
+  transition: all 0.3s ease;
+}
+
+.navbar .logo {
+  font-weight: 700;
+  font-size: 1.2rem;
+  letter-spacing: -0.5px;
 }
 
 .navbar ul {
   display: flex;
   gap: 30px;
+  margin: 0;
+  padding: 0;
 }
 
 .navbar li {
@@ -36,107 +93,77 @@ body {
 }
 
 .navbar a {
-  color: var(--text);
+  color: var(--text-secondary);
   text-decoration: none;
   font-weight: 500;
+  font-size: 0.9rem;
+  transition: color 0.2s;
 }
 
-/* HERO */
-.hero {
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  padding-left: 50px;
+.navbar a:hover {
+  color: var(--text);
 }
 
-.hero h1 {
-  font-size: 4rem;
-  margin: 0;
+/* SECTIONS */
+section {
+  padding: 100px 0;
+  position: relative;
 }
 
+h2 {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -1px;
+  margin-bottom: 40px;
+  background: linear-gradient(to right, #fff, #888);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* BUTTONS */
 .btn {
-  margin-top: 20px;
-  padding: 12px 28px;
-  background: var(--primary);
-  border-radius: 12px;
-  color: white;
+  padding: 14px 32px;
+  background: var(--text);
+  color: var(--bg);
+  border-radius: 100px;
   text-decoration: none;
-  font-weight: bold;
+  font-weight: 600;
   border: none;
   cursor: pointer;
   font-size: 1rem;
-  transition: opacity 0.2s;
+  transition: transform 0.2s, opacity 0.2s;
+  display: inline-block;
 }
 
 .btn:hover {
+  transform: scale(1.05);
   opacity: 0.9;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* CONTACT */
-.contact {
-  padding: 80px 50px;
-  max-width: 600px;
-  margin: 0 auto;
-}
-
-.contact h2 {
-  font-size: 2.5rem;
-  margin-bottom: 10px;
-}
-
-.contact-form {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  margin-top: 30px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.form-group label {
-  font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea {
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid var(--border);
-  background: var(--input-bg);
-  color: var(--text);
-  font-family: inherit;
-  font-size: 1rem;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-  outline: 2px solid var(--primary);
-  border-color: transparent;
-}
-
-.success-msg {
-  color: #4ade80;
-  font-weight: bold;
-}
-
-.error-msg {
-  color: #f87171;
-  font-weight: bold;
 }
 
 /* FOOTER */
 .footer {
   padding: 40px;
   text-align: center;
-  opacity: 0.6;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  border-top: 1px solid var(--glass-border);
+}
+
+/* ANIMATIONS */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.floating {
+  animation: float 6s ease-in-out infinite;
 }

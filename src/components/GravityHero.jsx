@@ -1,216 +1,92 @@
-import React, { useEffect, useRef, useState } from "react";
-import Matter from "matter-js";
+import React, { useEffect, useState } from "react";
+import gsap from "gsap";
 
 export default function GravityHero() {
-    const sceneRef = useRef(null);
-    const engineRef = useRef(null);
-    const renderRef = useRef(null);
-    const runnerRef = useRef(null);
-    const [isMobile, setIsMobile] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
 
     useEffect(() => {
-        const handleResize = () => {
-            setIsMobile(window.innerWidth <= 768);
-        };
-        handleResize();
-        window.addEventListener("resize", handleResize);
-
         // Trigger entry animation
         setTimeout(() => setIsLoaded(true), 100);
 
-        return () => window.removeEventListener("resize", handleResize);
+        // Floating animation for the hero visual
+        gsap.to(".hero-visual-floating", {
+            y: -20,
+            duration: 3,
+            repeat: -1,
+            yoyo: true,
+            ease: "sine.inOut"
+        });
     }, []);
 
-    useEffect(() => {
-        // Matter.js Setup
-        const Engine = Matter.Engine,
-            Render = Matter.Render,
-            World = Matter.World,
-            Bodies = Matter.Bodies,
-            Mouse = Matter.Mouse,
-            MouseConstraint = Matter.MouseConstraint,
-            Runner = Matter.Runner;
-
-        const engine = Engine.create();
-        const world = engine.world;
-        engineRef.current = engine;
-
-        // Disable gravity initially or set it low for floating effect
-        engine.world.gravity.y = 1;
-
-        const render = Render.create({
-            element: sceneRef.current,
-            engine: engine,
-            options: {
-                width: window.innerWidth,
-                height: window.innerHeight,
-                wireframes: false,
-                background: "transparent",
-                pixelRatio: window.devicePixelRatio
-            }
-        });
-        renderRef.current = render;
-
-        // Create Walls
-        const wallOptions = {
-            isStatic: true,
-            render: { visible: false },
-            restitution: 0.8
-        };
-
-        const ground = Bodies.rectangle(window.innerWidth / 2, window.innerHeight + 50, window.innerWidth, 100, wallOptions);
-        const leftWall = Bodies.rectangle(-50, window.innerHeight / 2, 100, window.innerHeight, wallOptions);
-        const rightWall = Bodies.rectangle(window.innerWidth + 50, window.innerHeight / 2, 100, window.innerHeight, wallOptions);
-
-        World.add(world, [ground, leftWall, rightWall]);
-
-        // Create Pills
-        const skills = [
-            "n8n", "Automation", "React", "Next.js", "AI", "Python",
-            "Node.js", "Docker", "API", "Webhooks", "Workflow", "Efficiency"
-        ];
-
-        const colors = ["#4285F4", "#34A853", "#FBBC05", "#EA4335", "#8E24AA", "#00ACC1"];
-
-        const pills = skills.map((skill, index) => {
-            const x = Math.random() * (window.innerWidth - 100) + 50;
-            const y = Math.random() * -500 - 50; // Start above screen
-            const width = skill.length * 14 + 40; // Approximate width based on text
-            const height = 50;
-            const color = colors[index % colors.length];
-
-            const body = Bodies.rectangle(x, y, width, height, {
-                chamfer: { radius: 25 },
-                restitution: 0.6,
-                friction: 0.1,
-                render: {
-                    fillStyle: isMobile ? "transparent" : color, // Hide on mobile if too cluttered, or keep
-                    strokeStyle: isMobile ? color : "transparent",
-                    lineWidth: isMobile ? 2 : 0,
-                    opacity: 0.9
-                }
-            });
-
-            // Custom property to store text
-            body.label = skill;
-            body.render.text = {
-                content: skill,
-                color: "#FFFFFF",
-                size: 16,
-                family: "Inter, sans-serif"
-            };
-
-            return body;
-        });
-
-        if (!isMobile) {
-            World.add(world, pills);
-        }
-
-        // Mouse Control
-        const mouse = Mouse.create(render.canvas);
-        const mouseConstraint = MouseConstraint.create(engine, {
-            mouse: mouse,
-            constraint: {
-                stiffness: 0.2,
-                render: { visible: false }
-            }
-        });
-
-        World.add(world, mouseConstraint);
-        render.mouse = mouse;
-
-        // Custom Rendering for Text
-        Matter.Events.on(render, "afterRender", function () {
-            const context = render.context;
-            context.font = "500 16px Inter, sans-serif";
-            context.textAlign = "center";
-            context.textBaseline = "middle";
-
-            pills.forEach(body => {
-                if (!body.render.visible) return;
-                const { x, y } = body.position;
-                const angle = body.angle;
-
-                context.save();
-                context.translate(x, y);
-                context.rotate(angle);
-                context.fillStyle = "#FFFFFF";
-                if (isMobile) context.fillStyle = body.render.strokeStyle;
-                context.fillText(body.label, 0, 0);
-                context.restore();
-            });
-        });
-
-        // Run
-        Render.run(render);
-        const runner = Runner.create();
-        runnerRef.current = runner;
-        Runner.run(runner, engine);
-
-        // Resize Handler
-        const handleResizeRender = () => {
-            render.canvas.width = window.innerWidth;
-            render.canvas.height = window.innerHeight;
-
-            // Reposition walls
-            Matter.Body.setPosition(ground, { x: window.innerWidth / 2, y: window.innerHeight + 50 });
-            Matter.Body.setPosition(rightWall, { x: window.innerWidth + 50, y: window.innerHeight / 2 });
-
-            // Note: Ideally recreate walls for width changes, but skipping for brevity
-        };
-
-        window.addEventListener("resize", handleResizeRender);
-
-        return () => {
-            window.removeEventListener("resize", handleResizeRender);
-            Render.stop(render);
-            Runner.stop(runner);
-            if (render.canvas) render.canvas.remove();
-            World.clear(world);
-            Engine.clear(engine);
-        };
-    }, [isMobile]);
-
     return (
-        <section className="gravity-hero">
-            <div ref={sceneRef} className="matter-scene" />
+        <section className="antigravity-hero">
+            {/* Background Grid & Glow */}
+            <div className="hero-background">
+                <div className="grid-overlay"></div>
+                <div className="glow-spot glow-1"></div>
+                <div className="glow-spot glow-2"></div>
+            </div>
 
             <div className="container hero-content-wrapper">
                 <div className="hero-content">
+                    <div className={`badge ${isLoaded ? 'visible' : ''}`}>
+                        <span>Public Preview</span>
+                    </div>
+
                     <h1 className={`hero-title ${isLoaded ? 'visible' : ''}`}>
-                        Membangun Automasi, Website, & Solusi AI yang Mempercepat Bisnis Anda
+                        Build the new way
                     </h1>
 
-                    {/* Hero Image Placeholder */}
-                    <div className={`hero-image-container ${isLoaded ? 'visible' : ''}`}>
-                        <div className="hero-image-placeholder">
-                            <div className="placeholder-screen">
-                                <div className="placeholder-content">
-                                    <span>Product / Dashboard UI</span>
+                    <p className={`hero-desc ${isLoaded ? 'visible' : ''}`}>
+                        The first agentic IDE. Plan, execute, and verify complex software with AI agents that understand your codebase.
+                    </p>
+
+                    <div className={`hero-buttons ${isLoaded ? 'visible' : ''}`}>
+                        <a href="#download" className="btn btn-primary">
+                            Download Antigravity
+                        </a>
+                        <a href="#docs" className="btn btn-text">
+                            Read the docs ›
+                        </a>
+                    </div>
+
+                    {/* Hero Visual - Abstract IDE Interface */}
+                    <div className={`hero-visual ${isLoaded ? 'visible' : ''}`}>
+                        <div className="hero-visual-floating">
+                            <div className="ide-window">
+                                <div className="ide-header">
+                                    <div className="dots">
+                                        <span></span><span></span><span></span>
+                                    </div>
+                                    <div className="tab">agent_plan.md</div>
+                                </div>
+                                <div className="ide-body">
+                                    <div className="code-line"><span className="keyword">task</span> <span className="string">"Refactor Authentication"</span> <span className="brace">{`{`}</span></div>
+                                    <div className="code-line indent"><span className="property">status</span>: <span className="value">IN_PROGRESS</span></div>
+                                    <div className="code-line indent"><span className="property">agent</span>: <span className="value">@security-bot</span></div>
+                                    <div className="code-line indent"><span className="property">steps</span>: <span className="brace">[</span></div>
+                                    <div className="code-line double-indent"><span className="string">"Analyze current session logic"</span>,</div>
+                                    <div className="code-line double-indent"><span className="string">"Implement JWT rotation"</span></div>
+                                    <div className="code-line indent"><span className="brace">]</span></div>
+                                    <div className="code-line"><span className="brace">{`}`}</span></div>
+
+                                    <div className="cursor"></div>
+                                </div>
+                                {/* Floating Agent Node */}
+                                <div className="agent-node">
+                                    <div className="agent-icon">
+                                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10H12V2z"></path></svg>
+                                    </div>
+                                    <div className="agent-status">Analyzing...</div>
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <p className={`hero-desc ${isLoaded ? 'visible' : ''}`}>
-                        Saya Faishal — Automation Engineer & Web Developer yang membantu bisnis meningkatkan efisiensi
-                        melalui workflow cerdas berbasis n8n, API integration, website modern, dan teknologi AI terbaru.
-                    </p>
-                    <div className={`hero-buttons ${isLoaded ? 'visible' : ''}`}>
-                        <a href="#contact" className="btn btn-primary">
-                            Mulai dari Konsultasi Gratis
-                        </a>
-                        <a href="#portfolio" className="btn btn-secondary">
-                            Lihat Portofolio
-                        </a>
                     </div>
                 </div>
             </div>
 
             <style>{`
-                .gravity-hero {
+                .antigravity-hero {
                     position: relative;
                     width: 100%;
                     min-height: 100vh;
@@ -218,151 +94,154 @@ export default function GravityHero() {
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    padding-top: 80px;
-                    background: radial-gradient(circle at center, #1a1a1a 0%, #000000 100%); /* Cinematic Dark Mode */
+                    padding-top: 100px;
+                    background: #050505;
+                    color: #fff;
                 }
 
-                .matter-scene {
+                /* Background Effects */
+                .hero-background {
                     position: absolute;
                     top: 0;
                     left: 0;
                     width: 100%;
                     height: 100%;
-                    z-index: 1;
-                    pointer-events: auto;
+                    z-index: 0;
+                    overflow: hidden;
                 }
 
+                .grid-overlay {
+                    position: absolute;
+                    width: 200%;
+                    height: 200%;
+                    top: -50%;
+                    left: -50%;
+                    background-image: 
+                        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                        linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+                    background-size: 40px 40px;
+                    transform: perspective(500px) rotateX(60deg);
+                    animation: gridMove 20s linear infinite;
+                }
+
+                @keyframes gridMove {
+                    0% { transform: perspective(500px) rotateX(60deg) translateY(0); }
+                    100% { transform: perspective(500px) rotateX(60deg) translateY(40px); }
+                }
+
+                .glow-spot {
+                    position: absolute;
+                    border-radius: 50%;
+                    filter: blur(100px);
+                    opacity: 0.4;
+                }
+
+                .glow-1 {
+                    top: -20%;
+                    left: 20%;
+                    width: 600px;
+                    height: 600px;
+                    background: radial-gradient(circle, #4285f4, transparent);
+                }
+
+                .glow-2 {
+                    bottom: -20%;
+                    right: 10%;
+                    width: 500px;
+                    height: 500px;
+                    background: radial-gradient(circle, #ab47bc, transparent);
+                }
+
+                /* Content */
                 .hero-content-wrapper {
                     position: relative;
                     z-index: 2;
-                    pointer-events: none;
                     width: 100%;
                 }
 
                 .hero-content {
-                    max-width: 1000px; /* Increased max-width for massive text */
-                    text-align: center;
+                    max-width: 1000px;
                     margin: 0 auto;
-                    pointer-events: auto;
+                    text-align: center;
                     display: flex;
                     flex-direction: column;
                     align-items: center;
                 }
 
-                /* Hero Title Animation */
+                /* Badge */
+                .badge {
+                    background: rgba(255, 255, 255, 0.1);
+                    border: 1px solid rgba(255, 255, 255, 0.2);
+                    padding: 6px 16px;
+                    border-radius: 100px;
+                    margin-bottom: 24px;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+                }
+
+                .badge span {
+                    font-size: 14px;
+                    font-weight: 500;
+                    color: #e8eaed;
+                    letter-spacing: 0.02em;
+                }
+
+                .badge.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* Typography */
                 .hero-title {
-                    font-size: 5rem; /* Massive size */
-                    font-weight: 800; /* Heavy weight */
-                    letter-spacing: -0.03em;
-                    line-height: 1.05;
-                    margin-bottom: 32px;
-                    color: #f5f5f7;
-                    background: linear-gradient(180deg, #fff 0%, rgba(255,255,255,0.7) 100%);
+                    font-size: 5rem;
+                    font-weight: 700;
+                    letter-spacing: -0.04em;
+                    line-height: 1;
+                    margin-bottom: 24px;
+                    background: linear-gradient(180deg, #fff 0%, #9aa0a6 100%);
                     -webkit-background-clip: text;
                     -webkit-text-fill-color: transparent;
-                    
-                    /* Initial State */
                     opacity: 0;
-                    transform: translateY(30px) scale(0.98); /* Focus effect start */
-                    filter: blur(10px); /* Focus effect start */
-                    transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1.0); /* Heavy ease */
-                    transition-delay: 0.2s; /* Stagger: after Navbar */
+                    transform: translateY(30px);
+                    filter: blur(10px);
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.1s;
                 }
 
                 .hero-title.visible {
-                    opacity: 1;
-                    transform: translateY(0) scale(1);
-                    filter: blur(0);
-                }
-
-                /* Hero Image Animation */
-                .hero-image-container {
-                    margin: 0 auto 40px;
-                    width: 100%;
-                    max-width: 700px;
-                    
-                    /* Initial State */
-                    opacity: 0;
-                    transform: scale(0.95);
-                    filter: blur(10px);
-                    transition: all 1.4s cubic-bezier(0.2, 0.8, 0.2, 1.0); /* Heavy ease */
-                    transition-delay: 0.8s; /* Stagger: last */
-                }
-
-                .hero-image-container.visible {
-                    opacity: 1;
-                    transform: scale(1);
-                    filter: blur(0);
-                }
-
-                .hero-image-placeholder {
-                    width: 100%;
-                    aspect-ratio: 16/9;
-                    background: rgba(255, 255, 255, 0.03);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 24px;
-                    backdrop-filter: blur(20px);
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    box-shadow: 0 0 0 1px rgba(255,255,255,0.1), 0 20px 50px rgba(0,0,0,0.5); /* Rim lighting simulation */
-                }
-                
-                .placeholder-screen {
-                    width: 95%;
-                    height: 90%;
-                    background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%);
-                    border-radius: 18px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    border: 1px solid rgba(255,255,255,0.1);
-                    box-shadow: inset 0 0 20px rgba(255,255,255,0.05);
-                }
-                
-                .placeholder-content span {
-                    color: rgba(255,255,255,0.5);
-                    font-weight: 600;
-                    font-size: 1.5rem;
-                    letter-spacing: -0.02em;
-                }
-
-                /* Description Animation */
-                .hero-desc {
-                    font-size: 1.5rem; /* Larger sub-headline */
-                    color: #86868b; /* Medium gray */
-                    font-weight: 500;
-                    margin-bottom: 40px;
-                    line-height: 1.4;
-                    max-width: 700px;
-                    letter-spacing: -0.01em;
-                    
-                    /* Initial State */
-                    opacity: 0;
-                    transform: translateY(20px);
-                    filter: blur(5px);
-                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1.0);
-                    transition-delay: 0.4s; /* Stagger: after title */
-                }
-
-                .hero-desc.visible {
                     opacity: 1;
                     transform: translateY(0);
                     filter: blur(0);
                 }
 
-                /* Buttons Animation */
+                .hero-desc {
+                    font-size: 1.5rem;
+                    color: #9aa0a6;
+                    max-width: 700px;
+                    margin-bottom: 40px;
+                    line-height: 1.5;
+                    opacity: 0;
+                    transform: translateY(20px);
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.2s;
+                }
+
+                .hero-desc.visible {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+
+                /* Buttons */
                 .hero-buttons {
                     display: flex;
                     gap: 24px;
-                    justify-content: center;
                     align-items: center;
-                    
-                    /* Initial State */
+                    margin-bottom: 80px;
                     opacity: 0;
                     transform: translateY(20px);
-                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1.0);
-                    transition-delay: 0.6s; /* Stagger: after desc */
+                    transition: all 1s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.3s;
                 }
 
                 .hero-buttons.visible {
@@ -370,67 +249,157 @@ export default function GravityHero() {
                     transform: translateY(0);
                 }
 
-                /* Minimalist Text Link Button */
                 .btn-primary {
-                    background: transparent;
-                    color: #2997ff; /* Apple Blue */
-                    font-size: 19px;
+                    background: #fff;
+                    color: #000;
+                    padding: 14px 32px;
+                    border-radius: 100px;
                     font-weight: 600;
-                    padding: 10px 0;
-                    border: none;
-                    box-shadow: none;
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 6px;
+                    font-size: 16px;
+                    text-decoration: none;
+                    transition: transform 0.2s;
                 }
 
                 .btn-primary:hover {
-                    background: transparent;
-                    transform: none;
-                    text-decoration: underline;
-                    box-shadow: none;
-                }
-                
-                .btn-primary::after {
-                    content: '›';
-                    font-size: 24px;
-                    line-height: 1;
-                    margin-top: -2px;
+                    transform: scale(1.05);
                 }
 
-                /* Frosted Glass Button */
-                .btn-secondary {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: #f5f5f7;
-                    padding: 12px 24px;
-                    border-radius: 980px;
-                    font-size: 17px;
+                .btn-text {
+                    color: #8ab4f8;
                     font-weight: 500;
-                    backdrop-filter: blur(20px);
-                    -webkit-backdrop-filter: blur(20px);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    transition: all 0.3s ease;
+                    font-size: 16px;
+                    text-decoration: none;
                 }
 
-                .btn-secondary:hover {
+                .btn-text:hover {
+                    text-decoration: underline;
+                }
+
+                /* Visual */
+                .hero-visual {
+                    width: 100%;
+                    max-width: 800px;
+                    perspective: 1000px;
+                    opacity: 0;
+                    transform: translateY(40px) scale(0.95);
+                    transition: all 1.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+                    transition-delay: 0.4s;
+                }
+
+                .hero-visual.visible {
+                    opacity: 1;
+                    transform: translateY(0) scale(1);
+                }
+
+                .ide-window {
+                    background: rgba(32, 33, 36, 0.8);
+                    backdrop-filter: blur(20px);
+                    border: 1px solid rgba(255, 255, 255, 0.1);
+                    border-radius: 16px;
+                    overflow: hidden;
+                    box-shadow: 0 40px 80px rgba(0, 0, 0, 0.5);
+                    text-align: left;
+                    position: relative;
+                }
+
+                .ide-header {
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 12px 20px;
+                    display: flex;
+                    align-items: center;
+                    gap: 16px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+                }
+
+                .dots {
+                    display: flex;
+                    gap: 6px;
+                }
+
+                .dots span {
+                    width: 10px;
+                    height: 10px;
+                    border-radius: 50%;
                     background: rgba(255, 255, 255, 0.2);
-                    transform: scale(1.02);
+                }
+
+                .tab {
+                    font-family: monospace;
+                    font-size: 12px;
+                    color: #9aa0a6;
+                    background: rgba(255, 255, 255, 0.05);
+                    padding: 4px 12px;
+                    border-radius: 4px;
+                }
+
+                .ide-body {
+                    padding: 24px;
+                    font-family: 'Roboto Mono', monospace;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #e8eaed;
+                    position: relative;
+                }
+
+                .code-line { margin-bottom: 4px; }
+                .indent { padding-left: 20px; }
+                .double-indent { padding-left: 40px; }
+                
+                .keyword { color: #ff7b72; }
+                .string { color: #a5d6ff; }
+                .property { color: #79c0ff; }
+                .value { color: #d2a8ff; }
+                .brace { color: #e8eaed; }
+
+                .cursor {
+                    display: inline-block;
+                    width: 2px;
+                    height: 16px;
+                    background: #4285f4;
+                    margin-left: 4px;
+                    vertical-align: middle;
+                    animation: blink 1s infinite;
+                }
+
+                @keyframes blink {
+                    50% { opacity: 0; }
+                }
+
+                .agent-node {
+                    position: absolute;
+                    top: -20px;
+                    right: -20px;
+                    background: #1e1e1e;
+                    border: 1px solid #4285f4;
+                    padding: 12px;
+                    border-radius: 12px;
+                    box-shadow: 0 10px 30px rgba(66, 133, 244, 0.3);
+                    display: flex;
+                    align-items: center;
+                    gap: 10px;
+                    animation: floatAgent 4s ease-in-out infinite;
+                }
+
+                @keyframes floatAgent {
+                    0%, 100% { transform: translateY(0); }
+                    50% { transform: translateY(-10px); }
+                }
+
+                .agent-icon {
+                    color: #4285f4;
+                }
+
+                .agent-status {
+                    font-size: 12px;
+                    font-weight: 500;
+                    color: #fff;
                 }
 
                 @media (max-width: 768px) {
-                    .hero-title {
-                        font-size: 3rem;
-                    }
-                    .hero-desc {
-                        font-size: 1.2rem;
-                    }
-                    .hero-buttons {
-                        flex-direction: column;
-                        gap: 16px;
-                    }
-                    .btn-primary {
-                        font-size: 17px;
-                    }
+                    .hero-title { font-size: 3rem; }
+                    .hero-desc { font-size: 1.1rem; }
+                    .hero-buttons { flex-direction: column; gap: 16px; }
+                    .ide-window { margin: 0 20px; }
                 }
             `}</style>
         </section>

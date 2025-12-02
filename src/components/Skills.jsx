@@ -5,42 +5,44 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 gsap.registerPlugin(ScrollTrigger);
 
 const skills = [
-    "JavaScript", "TypeScript", "React", "Next.js", "Node.js",
-    "Python", "n8n", "GSAP", "Three.js", "Tailwind CSS",
-    "Docker", "PostgreSQL", "MongoDB", "REST APIs", "GraphQL",
-    "Git", "Figma", "Web3", "AI/ML", "Cloud Deploy"
+  "n8n Workflow Automation", "API Integration", "REST & Webhooks",
+  "React", "Next.js", "TailwindCSS", "JavaScript", "Node.js", "Python",
+  "Docker", "Linux VPS", "Reverse Proxy", "Cloudflare", "SSL/HTTPS",
+  "AI Image Gen", "Stable Diffusion", "MidJourney",
+  "Supabase", "MySQL", "MongoDB",
+  "Problem Solving", "System Thinking", "Fast Execution", "Communication"
 ];
 
 export default function Skills() {
-    useEffect(() => {
-        const skillTags = gsap.utils.toArray(".skill-tag");
+  useEffect(() => {
+    const skillTags = gsap.utils.toArray(".skill-tag");
 
-        gsap.from(skillTags, {
-            scrollTrigger: {
-                trigger: ".skills-grid",
-                start: "top 80%",
-            },
-            opacity: 0,
-            y: 30,
-            stagger: 0.05,
-            duration: 0.6,
-            ease: "power3.out",
-        });
-    }, []);
+    gsap.from(skillTags, {
+      scrollTrigger: {
+        trigger: ".skills-grid",
+        start: "top 80%",
+      },
+      opacity: 0,
+      y: 30,
+      stagger: 0.05,
+      duration: 0.6,
+      ease: "power3.out",
+    });
+  }, []);
 
-    return (
-        <section id="skills" className="container">
-            <h2 style={{ textAlign: "center", marginBottom: "60px" }}>Skills & Technologies</h2>
+  return (
+    <section id="skills" className="container">
+      <h2 style={{ textAlign: "center", marginBottom: "60px" }}>Skills & Technologies</h2>
 
-            <div className="skills-grid">
-                {skills.map((skill, index) => (
-                    <div key={index} className="skill-tag">
-                        {skill}
-                    </div>
-                ))}
-            </div>
+      <div className="skills-grid">
+        {skills.map((skill, index) => (
+          <div key={index} className="skill-tag">
+            {skill}
+          </div>
+        ))}
+      </div>
 
-            <style>{`
+      <style>{`
         .skills-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -99,6 +101,6 @@ export default function Skills() {
           }
         }
       `}</style>
-        </section>
-    );
+    </section>
+  );
 }

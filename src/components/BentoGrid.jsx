@@ -2,105 +2,93 @@ import React, { useRef, useEffect } from "react";
 import gsap from "gsap";
 
 const BentoCard = ({ title, children, className = "" }) => {
-    const cardRef = useRef(null);
+  const cardRef = useRef(null);
 
-    useEffect(() => {
-        const card = cardRef.current;
+  useEffect(() => {
+    const card = cardRef.current;
 
-        const handleMouseMove = (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+    const handleMouseMove = (e) => {
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
 
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
 
-            const rotateX = ((y - centerY) / centerY) * -10; // Max rotation deg
-            const rotateY = ((x - centerX) / centerX) * 10;
+      const rotateX = ((y - centerY) / centerY) * -10; // Max rotation deg
+      const rotateY = ((x - centerX) / centerX) * 10;
 
-            gsap.to(card, {
-                rotateX: rotateX,
-                rotateY: rotateY,
-                duration: 0.4,
-                ease: "power2.out",
-                transformPerspective: 1000,
-            });
-        };
+      gsap.to(card, {
+        rotateX: rotateX,
+        rotateY: rotateY,
+        duration: 0.4,
+        ease: "power2.out",
+        transformPerspective: 1000,
+      });
+    };
 
-        const handleMouseLeave = () => {
-            gsap.to(card, {
-                rotateX: 0,
-                rotateY: 0,
-                duration: 0.4,
-                ease: "power2.out",
-            });
-        };
+    const handleMouseLeave = () => {
+      gsap.to(card, {
+        rotateX: 0,
+        rotateY: 0,
+        duration: 0.4,
+        ease: "power2.out",
+      });
+    };
 
-        card.addEventListener("mousemove", handleMouseMove);
-        card.addEventListener("mouseleave", handleMouseLeave);
+    card.addEventListener("mousemove", handleMouseMove);
+    card.addEventListener("mouseleave", handleMouseLeave);
 
-        return () => {
-            card.removeEventListener("mousemove", handleMouseMove);
-            card.removeEventListener("mouseleave", handleMouseLeave);
-        };
-    }, []);
+    return () => {
+      card.removeEventListener("mousemove", handleMouseMove);
+      card.removeEventListener("mouseleave", handleMouseLeave);
+    };
+  }, []);
 
-    return (
-        <div ref={cardRef} className={`bento-card glass ${className}`}>
-            <h3>{title}</h3>
-            {children}
-        </div>
-    );
+  return (
+    <div ref={cardRef} className={`bento-card glass ${className}`}>
+      <h3>{title}</h3>
+      {children}
+    </div>
+  );
 };
 
 export default function BentoGrid() {
-    return (
-        <section id="about" className="container" style={{ paddingBottom: "50px" }}>
-            <h2 style={{ textAlign: "center", marginBottom: "60px" }}>About & Work</h2>
+  return (
+    <section id="about" className="container" style={{ paddingBottom: "50px" }}>
+      <h2 style={{ textAlign: "center", marginBottom: "60px" }}>About & Work</h2>
 
-            <div className="bento-grid">
-                {/* About Me - Large Card */}
-                <BentoCard title="Who am I?" className="col-span-2 row-span-2 feature-card">
-                    <p style={{ fontSize: "1.2rem", color: "var(--text-secondary)", lineHeight: "1.6" }}>
-                        I'm a Fullstack Developer obsessed with <b>automation</b> and <b>interactive design</b>.
-                        I build systems that run themselves and interfaces that feel alive.
-                    </p>
-                    <div style={{ marginTop: "30px", display: "flex", gap: "10px", flexWrap: "wrap" }}>
-                        <span className="tag">React</span>
-                        <span className="tag">Node.js</span>
-                        <span className="tag">n8n</span>
-                        <span className="tag">GSAP</span>
-                    </div>
-                </BentoCard>
+      <div className="bento-grid">
+        {/* Project 1 - n8n Automation */}
+        <BentoCard title="n8n Automation" className="col-span-2">
+          <p className="card-desc">Booking & Notifikasi Real-Time: Google Sheets → API → WhatsApp → Dashboard.</p>
+          <p className="card-result">Hasil: Penghematan 20–30 jam kerja manual per bulan.</p>
+        </BentoCard>
 
-                {/* Project 1 */}
-                <BentoCard title="AI Art Gen">
-                    <p className="card-desc">Stable Diffusion + n8n workflow for automated stock image generation.</p>
-                    <a href="#" className="link">View Project →</a>
-                </BentoCard>
+        {/* Project 2 - Dokter Schedule */}
+        <BentoCard title="Sistem Jadwal Dokter" className="col-span-1">
+          <p className="card-desc">Integrasi Google Sheets + API + Frontend untuk jadwal real-time.</p>
+        </BentoCard>
 
-                {/* Project 2 */}
-                <BentoCard title="Crypto Dash">
-                    <p className="card-desc">Real-time Web3 analytics dashboard using D3.js.</p>
-                    <a href="#" className="link">View Project →</a>
-                </BentoCard>
+        {/* Project 3 - Landing Page */}
+        <BentoCard title="Corporate Landing Page" className="col-span-1">
+          <p className="card-desc">React based, clean design, SEO-friendly, high speed score.</p>
+        </BentoCard>
 
-                {/* Stats */}
-                <BentoCard title="Experience" className="col-span-1 stat-card">
-                    <div className="stat">
-                        <span className="number">5+</span>
-                        <span className="label">Years</span>
-                    </div>
-                </BentoCard>
+        {/* Project 4 - AI Image Gen */}
+        <BentoCard title="AI Image Generator" className="col-span-2">
+          <p className="card-desc">Setup Stable Diffusion + Upscale di Windows untuk produksi konten komersial.</p>
+          <p className="card-result">Hasil: Gambar kualitas tinggi siap jual di Adobe Stock.</p>
+        </BentoCard>
 
-                {/* Project 3 */}
-                <BentoCard title="SaaS Platform" className="col-span-2">
-                    <p className="card-desc">Enterprise automation platform handling 1M+ events/day.</p>
-                    <a href="#" className="link">View Project →</a>
-                </BentoCard>
-            </div>
+        {/* Project 5 - Server Deployment */}
+        <BentoCard title="Server Deployment" className="col-span-2">
+          <p className="card-desc">VPS + Docker + Domain + SSL. Setup n8n, web apps, reverse proxy.</p>
+          <p className="card-result">Hasil: Infrastruktur stabil dan aman.</p>
+        </BentoCard>
+      </div>
 
-            <style>{`
+      <style>{`
         .bento-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -184,6 +172,6 @@ export default function BentoGrid() {
           .bento-grid { grid-template-columns: 1fr; }
         }
       `}</style>
-        </section>
-    );
+    </section>
+  );
 }

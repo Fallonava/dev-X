@@ -3,12 +3,13 @@ import Lenis from "lenis";
 
 import Navbar from "./components/Navbar";
 import GravityHero from "./components/GravityHero";
-import AntigravitySection from "./components/AntigravitySection";
-import FeatureCards from "./components/FeatureCards";
-import StepsSection from "./components/StepsSection";
-import CTASection from "./components/CTASection";
+import About from "./components/About";
+import Skills from "./components/Skills";
+import BentoGrid from "./components/BentoGrid";
+import Services from "./components/Services";
+import Testimonials from "./components/Testimonials";
+import Contact from "./components/Contact";
 import Footer from "./components/Footer";
-import CursorParticles from "./components/CursorParticles";
 
 export default function App() {
   useEffect(() => {
@@ -116,36 +117,16 @@ export default function App() {
 
   return (
     <>
-      <CursorParticles />
       <Navbar />
       <GravityHero />
-
-      <AntigravitySection
-        title="Build the new way"
-        subtitle="Antigravity is a cloud-based IDE that brings together the best of Google's developer tools and services."
-        image={<Illustration />}
-        imagePosition="right"
-      />
-
-      <FeatureCards
-        title="Code, collaborate, and deploy"
-        features={features}
-      />
-
-      <AntigravitySection
-        title="Powered by Google Cloud"
-        subtitle="Leverage the power and scale of Google Cloud to build and run your applications."
-        image={<Illustration />}
-        imagePosition="left"
-      />
-
-      <StepsSection
-        title="Get started with Antigravity"
-        steps={steps}
-      />
-
-      <CTASection title="Ready to take flight?" />
-
+      <About />
+      <Skills />
+      <div id="portfolio">
+        <BentoGrid />
+      </div>
+      <Services />
+      <Testimonials />
+      <Contact />
       <Footer />
     </>
   );

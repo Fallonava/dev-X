@@ -18,7 +18,7 @@ export default function Navbar() {
 
   return (
     <nav className="navbar">
-      <div className="logo">Antigravity</div>
+      <div className="logo">Faishal</div>
 
       {/* Mobile Menu Toggle */}
       <button
@@ -34,18 +34,15 @@ export default function Navbar() {
 
       {/* Navigation Menu */}
       <ul className={`nav-menu ${isMenuOpen ? "active" : ""}`}>
-        <li><a href="#product" onClick={() => setIsMenuOpen(false)}>Product</a></li>
-        <li><a href="#use-cases" onClick={() => setIsMenuOpen(false)}>Use Cases</a></li>
-        <li><a href="#pricing" onClick={() => setIsMenuOpen(false)}>Pricing</a></li>
-        <li><a href="#blog" onClick={() => setIsMenuOpen(false)}>Blog</a></li>
-        <li><a href="#resources" onClick={() => setIsMenuOpen(false)}>Resources</a></li>
+        <li><a href="#about" onClick={() => setIsMenuOpen(false)}>About</a></li>
+        <li><a href="#skills" onClick={() => setIsMenuOpen(false)}>Skills</a></li>
+        <li><a href="#portfolio" onClick={() => setIsMenuOpen(false)}>Portfolio</a></li>
+        <li><a href="#services" onClick={() => setIsMenuOpen(false)}>Services</a></li>
+        <li><a href="#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
         <li>
-          <button className="nav-download-btn">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
-            </svg>
-            Download
-          </button>
+          <a href="#contact" className="nav-download-btn" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            Contact Me
+          </a>
         </li>
       </ul>
 

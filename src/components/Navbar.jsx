@@ -11,8 +11,8 @@ export default function Navbar() {
   useEffect(() => {
     gsap.fromTo(
       ".navbar",
-      { y: -50, opacity: 0 },
-      { y: 0, opacity: 1, duration: 1, ease: "power4.out", delay: 0.3 }
+      { y: -100, opacity: 0 },
+      { y: 20, opacity: 1, duration: 1.2, ease: "power3.out", delay: 0.2 }
     );
   }, []);
 
@@ -40,7 +40,7 @@ export default function Navbar() {
         <li><a href="#services" onClick={() => setIsMenuOpen(false)}>Services</a></li>
         <li><a href="#testimonials" onClick={() => setIsMenuOpen(false)}>Testimonials</a></li>
         <li>
-          <a href="#contact" className="nav-download-btn" onClick={() => setIsMenuOpen(false)} style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <a href="#contact" className="nav-download-btn" onClick={() => setIsMenuOpen(false)}>
             Contact Me
           </a>
         </li>
@@ -50,7 +50,7 @@ export default function Navbar() {
         .menu-toggle {
           display: none;
           flex-direction: column;
-          gap: 6px;
+          gap: 5px;
           background: none;
           border: none;
           cursor: pointer;
@@ -60,15 +60,15 @@ export default function Navbar() {
 
         .menu-toggle span {
           display: block;
-          width: 24px;
+          width: 22px;
           height: 2px;
           background: var(--text);
           border-radius: 2px;
-          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          transition: all 0.3s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .menu-toggle span.open:nth-child(1) {
-          transform: rotate(45deg) translate(8px, 8px);
+          transform: rotate(45deg) translate(5px, 5px);
         }
 
         .menu-toggle span.open:nth-child(2) {
@@ -76,7 +76,7 @@ export default function Navbar() {
         }
 
         .menu-toggle span.open:nth-child(3) {
-          transform: rotate(-45deg) translate(7px, -7px);
+          transform: rotate(-45deg) translate(5px, -5px);
         }
 
         @media (max-width: 768px) {
@@ -89,17 +89,20 @@ export default function Navbar() {
             top: 0;
             right: -100%;
             height: 100vh;
-            width: 280px;
-            background: rgba(10, 14, 39, 0.95);
-            backdrop-filter: blur(20px);
+            width: 100%;
+            max-width: 320px;
+            background: rgba(28, 28, 30, 0.95);
+            backdrop-filter: blur(40px);
+            -webkit-backdrop-filter: blur(40px);
             flex-direction: column;
             justify-content: center;
-            align-items: flex-start;
+            align-items: center;
             padding: 40px;
-            gap: 32px;
-            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            gap: 24px;
+            transition: right 0.5s cubic-bezier(0.19, 1, 0.22, 1);
             border-left: 1px solid var(--glass-border);
-            box-shadow: -4px 0 24px rgba(0, 0, 0, 0.3);
+            box-shadow: -20px 0 40px rgba(0, 0, 0, 0.5);
+            z-index: 999;
           }
 
           .nav-menu.active {
@@ -108,17 +111,33 @@ export default function Navbar() {
 
           .nav-menu li {
             width: 100%;
+            text-align: center;
           }
 
           .nav-menu a {
-            font-size: 1.2rem;
+            font-size: 1.5rem;
             display: block;
-            padding: 12px 0;
+            padding: 16px 0;
+            color: var(--text);
+            font-weight: 600;
+          }
+          
+          .nav-menu a:hover {
+            color: var(--primary);
+            background: transparent;
           }
 
           .nav-download-btn {
             width: 100%;
             justify-content: center;
+            margin-top: 20px;
+            background: var(--primary);
+            color: white;
+            padding: 16px;
+          }
+          
+          .nav-download-btn:hover {
+            background: #1a85ff;
           }
         }
       `}</style>

@@ -6,6 +6,8 @@ import Hero from "./components/Hero";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 
+import Contact from "./components/Contact";
+
 export default function App() {
   useEffect(() => {
     // Smooth scroll
@@ -38,6 +40,7 @@ export default function App() {
     <>
       <Navbar />
       <Hero />
+      <Contact />
       <Footer />
     </>
   );
